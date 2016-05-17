@@ -1,6 +1,6 @@
 import string
 import re
-
+import itertools
 # Brown Corpus from http://www.sls.hawaii.edu/bley-vroman/brown_corpus.html
 
 # read in the file
@@ -14,7 +14,7 @@ sentences = [re.sub(r'[^A-Za-z0-9]', '', sentence).lower() for sentence in raw_s
 #   (probability, word as a flat string, list of pointers to other entries/terminals)
 
 # Let G be the set of terminals with uniform probabilities.
-initial_letters = list(string.lowercase + string.digits)
+initial_letters = list(string.lowercase + string.digits)+ ["asd"]
 grammar = [(1.0/len(initial_letters), letter, [letter]) for letter in initial_letters]
 
 # TODO make it work for more than just terminals
@@ -129,15 +129,60 @@ grammar = update_grammar(grammar, word_soft_counts)
 #       Refine linguistic properties of G to improve expected performance over U'.
 #           Add new parameters to G that are the composition of existing ones.
 
-print grammar
+#print grammar
 
 
+def Viterbi(g,str):
+    R = [[]]*(len(str)+1)
+    dp_alpha = [0.0]*(len(str)+1)
+    dp_alpha[0] = 1.0
+    for i in range(len(str)+1):
+        for j in range(i+1):
+            substr = str[j:i]
+            entry = word_in_grammar(g, substr)  
+            if entry:
+                tmp = entry[0]*dp_alpha[j]
+                if tmp > dp_alpha[i]:
+                    R[i] = R[j] + [entry]
+                    dp_alpha[i] = tmp 
+#    print len(R)
+    return R[i]
 
+Viterbi_array = []
+for str in utterances:
+    Viterbi_array.append(Viterbi(grammar,str))
 
+#print Viterbi_array 
 
+Viterbi_pair_array = []
+for representation in Viterbi_array:
+    Viterbi_pair_array += zip([None] + representation,representation+[None])[1:-1]
+#print Viterbi_pair_array 
 
+candidate_pair = []
+for pair,pairs in itertools.groupby(sorted(Viterbi_pair_array)):
+    if len(list(pairs)) >= 2:
+        candidate_pair.append(pair) 
 
+print candidate_pair
 
+# TODO calculate the soft count of each word pair 
+
+#print group_by(lambda pair:, Viterbi_pair_array)
+
+"""
+    word_probability, word, _ = grammar_entry
+    word_length = len(word)
+    probability = 0.0
+    i = string.find(str, word, 0)
+    while i > -1:
+        probability += alphas[i] * \
+            word_probability * \
+            betas[i+word_length]
+        i = string.find(str, word, i+1)
+    return probability / betas[0]
+"""
+#print Viterbi(grammar,"assd")
 #   Set U' = U + G.
 #       Optimize stochastic properties of G over U'
 #           Perform optimization via 3 steps of the forward-backward algorithm.
