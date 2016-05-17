@@ -89,56 +89,55 @@ def update_grammar(grammar, word_soft_counts):
 #   Let U' = U + G
 utterances = strings_in_grammar(grammar) + sentences
 
-utterance_alphas = [alphas(grammar, utterance) for utterance in utterances]
-utterance_betas  = [betas(grammar, utterance)  for utterance in utterances]
-word_soft_counts = {}
-
-
-for i in xrange(len(utterances)):
-    for grammar_entry in grammar:
-        _, word, _ = grammar_entry
-        if not word_soft_counts.get(word):
-            word_soft_counts[word] = 0.0
-        word_soft_counts[word] += \
-            soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], grammar_entry)
-
-grammar = update_grammar(grammar, word_soft_counts)
-
-
-utterance_alphas = [alphas(grammar, utterance) for utterance in utterances]
-utterance_betas  = [betas(grammar, utterance)  for utterance in utterances]
-word_soft_counts = {}
-
-for i in xrange(len(utterances)):
-    for grammar_entry in grammar:
-        _, word, _ = grammar_entry
-        if not word_soft_counts.get(word):
-            word_soft_counts[word] = 0.0
-        word_soft_counts[word] += \
-            soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], grammar_entry)
-
-grammar = update_grammar(grammar, word_soft_counts)
-
-
-
-print grammar
-
-# print word_soft_counts
-
-        # print grammar_entry[1]
-        # print soft_count_of_word_in_sentence(alphas(grammar, "aasdff"), betas(grammar, "aasdff"), "aasdff", grammar_entry)
-
-
 
 #       Optimize stochastic properties of G over U'.
 #           Perform optimization via 2 steps of the forward-backward algorithm.
 
+utterance_alphas = [alphas(grammar, utterance) for utterance in utterances]
+utterance_betas  = [betas(grammar, utterance)  for utterance in utterances]
+word_soft_counts = {}
 
 
+for i in xrange(len(utterances)):
+    for grammar_entry in grammar:
+        _, word, _ = grammar_entry
+        if not word_soft_counts.get(word):
+            word_soft_counts[word] = 0.0
+        word_soft_counts[word] += \
+            soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], grammar_entry)
+
+grammar = update_grammar(grammar, word_soft_counts)
+
+
+utterance_alphas = [alphas(grammar, utterance) for utterance in utterances]
+utterance_betas  = [betas(grammar, utterance)  for utterance in utterances]
+word_soft_counts = {}
+
+for i in xrange(len(utterances)):
+    for grammar_entry in grammar:
+        _, word, _ = grammar_entry
+        if not word_soft_counts.get(word):
+            word_soft_counts[word] = 0.0
+        word_soft_counts[word] += \
+            soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], grammar_entry)
+
+grammar = update_grammar(grammar, word_soft_counts)
 
 #           During second step record parameter co-occurrence counts and Viterbi representations
+
+
 #       Refine linguistic properties of G to improve expected performance over U'.
 #           Add new parameters to G that are the composition of existing ones.
+
+print grammar
+
+
+
+
+
+
+
+
 #   Set U' = U + G.
 #       Optimize stochastic properties of G over U'
 #           Perform optimization via 3 steps of the forward-backward algorithm.
