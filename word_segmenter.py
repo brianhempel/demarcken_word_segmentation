@@ -225,14 +225,16 @@ for iteration_number in range(1,16):
         ((prob1, word1, rep1), (prob2, word2, rep2)) = pair
         pair_key = (word1, word2)
         pair_str = word1 + word2
-
         word_soft_counts_in_pair = {}
+        
+        pair_alphas = alphas(grammar,pair_str)
+        pair_betas = betas(grammar,pair_str)
         for grammar_entry in grammar:
             _, word, _ = grammar_entry
             if not word_soft_counts_in_pair.get(word):
                 word_soft_counts_in_pair[word] = 0.0
             word_soft_counts_in_pair[word] += \
-                soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], pair_str, grammar_entry)
+                soft_count_of_word_in_sentence(pair_alphas, pair_betas, pair_str, grammar_entry)
 
         words_in_pair = filter(lambda word: word_soft_counts_in_pair[word] > 0, word_soft_counts_in_pair)
 
@@ -242,7 +244,13 @@ for iteration_number in range(1,16):
                 word_soft_counts[word_in_pair] + \
                 word_soft_counts_in_pair[word_in_pair] - \
                 pair_soft_counts[pair_key] * word_soft_counts_in_pair[word_in_pair]
-
+            if new_word_soft_counts[word_in_pair] < 0:
+                print words_in_pair
+                print word_in_pair
+                print word_soft_counts[word_in_pair] 
+                print word_soft_counts_in_pair[word_in_pair] 
+                print pair_soft_counts[pair_key] 
+                print word_soft_counts_in_pair[word_in_pair]
         new_word_soft_counts[pair_str] = pair_soft_counts[pair_key]
 
         old_counts_of_changed_old_words = sum([word_soft_counts[word] for word in words_in_pair])
@@ -254,7 +262,7 @@ for iteration_number in range(1,16):
 
         # print pair_key
         # print word_soft_counts
-        # print new_word_soft_counts
+#  print new_word_soft_counts
         changed_words_new_dl = sum([new_word_soft_counts[word]*math.log(new_word_soft_counts[word]/new_total_soft_counts,2) for word in new_word_soft_counts if new_word_soft_counts[word] != 0])
         changed_words_old_dl = sum([word_soft_counts[word]*math.log(word_soft_counts[word]/old_total_soft_counts,2) for word in new_word_soft_counts if word != pair_str and word_soft_counts[word] != 0])
 
@@ -342,7 +350,8 @@ for iteration_number in range(1,16):
             new_word = word1 + word2
             new_rep  = Viterbi(grammar, new_word)
             grammar_entry = (new_prob, new_word, new_rep)
-            new_entries.append(grammar_entry)
+            if new_word not in [entry[1] for entry in grammar] and new_word not in [entry[1] for entry in new_entries]:
+                new_entries.append(grammar_entry)
 
     grammar += new_entries
 
@@ -362,11 +371,55 @@ for iteration_number in range(1,16):
     #       Refine linguistic properties of G to improve expected performance over U'.
     #           Delete parameters from G.
 
+    # for each word in lexicon 
+    #   see if its' Viterbi rep has changed, if so, skip word 
+    #   see if deleting it would improve dl
+    #   If so 
+    #     delete it 
+    #remark Viterbi reps of dictionary 
 
+    old_total_soft_counts = sum(word_soft_counts.values())
+    for entry in copy.deepcopy(grammar):
+        prob,word,rep = entry
+        new_word_soft_counts_if_word_deleted = {}
+        before_delete_rep  = Viterbi(grammar, word)
+        if before_delete_rep != rep:
+            continue
+        old_counts_of_changed_old_words = sum([word_soft_counts[rep_part[1]] for rep_part in before_delete_rep]) + word_soft_counts[word]
+    
+        new_counts_of_changed_words = {}
+        for rep_part in before_delete_rep:
+            part = rep_part[1]
+            new_counts_of_changed_words[part] = rep.count(part)*word_soft_counts[word]-rep.count(part) 
+        new_counts_of_changed_words[word] = 0.0
+    
+        new_sf_counts_of_changed_words = sum(new_counts_of_changed_words.values())    
+        
+        changed_count_in_new_grammar = new_sf_counts_of_changed_words - old_counts_of_changed_old_words 
+        
+        entropy_changed_word_in_new_grammar = 0.0
 
+        
+        new_total_soft_counts = changed_count_in_new_grammar + old_total_soft_counts
+        for k,v in new_counts_of_changed_word.items():
+            entropy_changed_word_in_new_grammar -=log(new_sf_counts_of_changed_words[k]/new_total_soft_counts)*new_sf_counts_of_changed_words[k]
+        
+        entropy_changed_word_in_old_grammar = 0.0
+        for k,v in new_counts_of_changed_word.items():
+            entropy_changed_word_in_old_grammar -=log(word_soft_counts[k]/old_total_soft_counts)*word_soft_counts[k]
+        dl_delta_for_delete = \
+            (old_total_soft_counts - old_counts_of_changed_old_words) * \
+            math.log(new_total_soft_counts / old_total_soft_counts, 2) + \
+            entropy_changed_word_in_new_grammar -\
+            entropy_changed_word_in_old_grammar 
+        if dl_delta_for_delete < 0:
+           grammar.remove(entry)
 
-
-
-
+    new_grammar = []
+    for entry in grammar:
+        prob,word,rep = entry
+        new_rep = Viterbi(grammar,word)
+        new_grammar.append((prob,word,new_rep))
+    grammar = new_grammar
 # TODO make sure we handle duplicate word pairs in candidates e.g. [[pa][i]]  [[p][ai]]
 
