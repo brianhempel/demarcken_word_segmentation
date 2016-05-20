@@ -16,31 +16,40 @@ raw_sentences = open(FILEPATH).readlines()
 sentences = [re.sub(r'[^A-Za-z0-9]', '', sentence).lower() for sentence in raw_sentences]
 
 # Entries in the grammar are...
-#   (probability, word as a flat string, list of pointers to other entries/terminals)
+#  (probability, string parts)
 
 # Let G be the set of terminals with uniform probabilities.
 initial_letters = list(string.lowercase + string.digits) #+ ["at"]
-grammar = []
+grammar = {}
 for letter in initial_letters:
-    entry = (1.0/len(initial_letters), letter, [])
-    entry[2].append(entry) # Terminal's representation is themselves.
-    grammar.append(entry)
+    entry = (1.0/len(initial_letters),[letter])
+    grammar[letter] = entry 
 
-
-
-# TODO make it work for more than just terminals
 def strings_in_grammar(g):
-    return [flat_string for (probability, flat_string, parts) in g]
+    return g.keys()
 
 def word_in_grammar(g, word):
-    for i in range(len(g)):
-        if g[i][1] == word:
-            return g[i]
-    return None
+    return g.get(word)
+
+def grammar_summary(g):
+    print "Total probabilityi: %f" % (sum([entry[0] for entry in g.values()]))
+    print "Number of entries: %d" % len(grammar)
+    sorted_words = sorted(g.keys(), key=lambda word: -g[word][0])
+    print "Most probable words:"
+    print [(word, g[word][0]) for word in sorted_words[0:10]]
+    print "Least probable words: "
+    print [(word, g[word][0]) for word in sorted_words[-10:]]
 
 def log(x):
     return math.log(x,2)
 
+def log_add(x,y):
+    if x == -INF:
+        return y
+    elif x < -1074 and x > -2000: # Still crash if it's super negative: probably a bug
+        return y
+    else:
+        return x+log(1+2**y/2**x)
 # probability of generating a string up to position i is...
 # sum of
 #   the probability of generating each shorter string TIMES the probabiliy of using the appropriate word to fill in the difference
@@ -56,12 +65,14 @@ def alphas(g, str):
             substr = str[j:i]
             entry = word_in_grammar(g, substr)
             if entry:
-                word_probability, _, _ = entry
+                word_probability, _ = entry
+                if word_probability == 0:
+                    print g
+                    print str
+                    print substr
+                    print entry
                 term = alphas[j] + log(word_probability)
-                if a_i == -INF:
-                    a_i = term
-                else:
-                    a_i += log(1 + 2**term / 2**a_i)
+                a_i = log_add(a_i,term)
         alphas.append(a_i)
     return alphas
 
@@ -79,18 +90,14 @@ def betas(g, str):
             substr = str[i:j]
             entry = word_in_grammar(g, substr)
             if entry:
-                word_probability, _, _ = entry
+                word_probability, _ = entry
                 term = betas[j] + log(word_probability)
-                if b_i == -INF:
-                    b_i = term
-                else:
-                    b_i += log(1 + 2**term / 2**b_i)
+                b_i = log_add(b_i,term)
         betas[i] = b_i
     return betas
 
 
-def soft_count_of_word_in_sentence(alphas, betas, str, grammar_entry):
-    word_probability, word, _ = grammar_entry
+def soft_count_of_word_in_sentence(alphas, betas, str, word, word_probability):
     word_length = len(word)
     # Not allowed to encode entire sentence as one word.
     # Namely, non-terminal dictionary entries are not allowed to encode themselves.
@@ -102,27 +109,25 @@ def soft_count_of_word_in_sentence(alphas, betas, str, grammar_entry):
         term = alphas[i] + \
             log(word_probability) + \
             betas[i+word_length]
-        if log_probability == -INF:
-            log_probability = term
-        else:
-            log_probability += log(1 + 2**term / 2**log_probability)
+        log_probability = log_add(log_probability,term)
         i = string.find(str, word, i+1)
 
-    return 2**(log_probability - betas[0])
+    return 2**(log_probability - betas[0]) + 0.000000001
 
 # Equation (5.7)
-def soft_count_of_pair_in_sentence(alphas, betas, str, pair):
-    ((prob1, word1, rep1), (prob2, word2, rep2)) = pair
-    grammar_entry = (prob1*prob2, word1 + word2, rep1 + rep2)
-    return soft_count_of_word_in_sentence(alphas, betas, str, grammar_entry)
+def soft_count_of_pair_in_sentence(g, alphas, betas, str, pair):
+    word1, word2 = pair
+    prob1, _ = g[word1]
+    prob2, _ = g[word2]
+    return soft_count_of_word_in_sentence(alphas, betas, str, word1+word2, prob1*prob2)
 
-def update_grammar(grammar, word_soft_counts):
+def update_grammar(g, word_soft_counts):
     total_soft_counts = sum(word_soft_counts.values())
-    new_grammar = []
-    for entry in grammar:
-        prob, word, representation = entry
+    new_grammar = {}
+    for word, entry in g.items():
+        prob, representation = entry
         new_prob = word_soft_counts[word] / total_soft_counts
-        new_grammar.append((new_prob, word, representation))
+        new_grammar[word] = (new_prob, representation))
     return new_grammar
 
 
@@ -135,31 +140,32 @@ def Viterbi(g,str):
         for j in range(i+1):
             # Not allowed to encode entire sentence as one word.
             # Namely, non-terminal dictionary entries are not allowed to encode themselves.
-            if i == 0 and j == len(str) and len(str) > 1:
+            if j == 0 and i == len(str) and len(str) > 1:
                 continue
             substr = str[j:i]
             entry = word_in_grammar(g, substr)
             if entry:
-                tmp = log(entry[0]) + dp_alpha[j]
+                prob, rep = entry
+                tmp = log(prob) + dp_alpha[j]
                 if tmp > dp_alpha[i]:
-                    R[i] = R[j] + [entry]
+                    R[i] = R[j] + [substr]
                     dp_alpha[i] = tmp
     return R[i]
 
-def entry_nested_brackets_str(entry):
-    _, word, rep = entry
+def entry_nested_brackets_str(g, word):
+    _, rep = g[word]
     if len(word) == 1: # Terminal character
         return word
     else:
-        return "[" + "".join([entry_nested_brackets_str(part) for part in rep]) + "]"
+        return "[" + "".join([entry_nested_brackets_str(g, part) for part in rep]) + "]"
 
 # "[[th][e]][f][u][lt]"
 def Viterbi_nice_str(g, str):
     best_rep = Viterbi(g,str)
-    str = ""
-    for entry in best_rep:
-        str += entry_nested_brackets_str(entry)
-    return str
+    out = ""
+    for word in best_rep:
+        out += entry_nested_brackets_str(g, word)
+    return out
 
 def forward_backward(grammar, utterances):
     utterance_alphas = [alphas(grammar, utterance) for utterance in utterances]
@@ -167,11 +173,11 @@ def forward_backward(grammar, utterances):
 
     word_soft_counts = {}
     for i in xrange(len(utterances)):
-        for grammar_entry in grammar:
-            _, word, _ = grammar_entry
+        for word, entry in grammar.items():
+            word_prob, _ = entry
             if not word_soft_counts.get(word):
                 word_soft_counts[word] = 0.0
-            sc = soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], grammar_entry)
+            sc = soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], word, word_prob)
             word_soft_counts[word] += sc
 
     new_grammar = update_grammar(grammar, word_soft_counts)
@@ -182,8 +188,10 @@ def forward_backward(grammar, utterances):
 
 # DeMarcken just iterated 15 times and didn't
 # bother setting a rigorous criteria for convergence
-for iteration_number in range(1,16):
-
+for iteration_number in range(1,7):
+    print
+    print
+    print "#### Iteration %d ####" % iteration_number
     #   Let U' = U + G
     utterances = strings_in_grammar(grammar) + sentences
 
@@ -210,20 +218,20 @@ for iteration_number in range(1,16):
     pair_soft_counts = {}
     for i in xrange(len(utterances)):
         for pair in candidate_pairs:
-            ((prob1, word1, rep1), (prob2, word2, rep2)) = pair
-            pair_key = (word1, word2)
-            if not pair_soft_counts.get(pair_key):
-                pair_soft_counts[pair_key] = 0.0
-            pair_soft_counts[pair_key] += \
-                soft_count_of_pair_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], pair)
+            word1, word2 = pair
+            prob1, _ = grammar[word1]
+            prob2, _ = grammar[word2]
+            if not pair_soft_counts.get(pair):
+                pair_soft_counts[pair] = 0.0
+            pair_soft_counts[pair] += \
+                soft_count_of_pair_in_sentence(grammar, utterance_alphas[i], utterance_betas[i], utterances[i], pair)
 
     old_total_soft_counts = sum(word_soft_counts.values())
-    old_dl = sum([-word_soft_counts[word] * math.log(prob, 2) for (prob, word, rep) in grammar])
+    old_dl = sum([-word_soft_counts[word] * math.log(grammar[word][0], 2) for word in grammar])
     new_entries = []
 
     for pair in candidate_pairs:
-        ((prob1, word1, rep1), (prob2, word2, rep2)) = pair
-        pair_key = (word1, word2)
+        word1, word2 = pair
         pair_str = word1 + word2
         word_soft_counts_in_pair = {}
         
@@ -353,8 +361,14 @@ for iteration_number in range(1,16):
             if new_word not in [entry[1] for entry in grammar] and new_word not in [entry[1] for entry in new_entries]:
                 new_entries.append(grammar_entry)
 
+    print "New entries:"
+    print [entry[1] for entry in new_entries]
+
     grammar += new_entries
 
+    print "Grammar summary:"
+    grammar_summary(grammar)
+    
     # print [entry[0] for entry in grammar]
     print Viterbi_nice_str(grammar, sentences[0])
 
@@ -379,10 +393,12 @@ for iteration_number in range(1,16):
     #remark Viterbi reps of dictionary 
 
     old_total_soft_counts = sum(word_soft_counts.values())
+    deleted_entries = []
     for entry in copy.deepcopy(grammar):
         prob,word,rep = entry
         new_word_soft_counts_if_word_deleted = {}
         before_delete_rep  = Viterbi(grammar, word)
+        print (rep, before_delete_rep)
         if before_delete_rep != rep:
             continue
         old_counts_of_changed_old_words = sum([word_soft_counts[rep_part[1]] for rep_part in before_delete_rep]) + word_soft_counts[word]
@@ -412,8 +428,11 @@ for iteration_number in range(1,16):
             math.log(new_total_soft_counts / old_total_soft_counts, 2) + \
             entropy_changed_word_in_new_grammar -\
             entropy_changed_word_in_old_grammar 
+        print word
+        print dl_delta_for_delete
         if dl_delta_for_delete < 0:
-           grammar.remove(entry)
+            grammar.remove(entry)
+            deleted_entries.append(entry)
 
     new_grammar = []
     for entry in grammar:
@@ -421,5 +440,15 @@ for iteration_number in range(1,16):
         new_rep = Viterbi(grammar,word)
         new_grammar.append((prob,word,new_rep))
     grammar = new_grammar
+
+    print "Deleted entries:"
+    print [entry[1] for entry in deleted_entries]
+
+    print "Grammar summary:"
+    grammar_summary(grammar)
+    
+    # print [entry[0] for entry in grammar]
+    print Viterbi_nice_str(grammar, sentences[0])
+
 # TODO make sure we handle duplicate word pairs in candidates e.g. [[pa][i]]  [[p][ai]]
 
