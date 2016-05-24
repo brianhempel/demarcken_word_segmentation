@@ -399,68 +399,85 @@ for iteration_number in range(1,16):
             changed_words_old_dl
 
 
+        # Prepare for deletion estimation
+
+        total_soft_counts_after_pair_added = new_total_soft_counts
+        changed_word_soft_counts_after_pair_added = new_word_soft_counts
+
+        word_soft_counts_after_pair_added = {}
+        word_soft_counts_after_pair_added[word1] = changed_word_soft_counts_after_pair_added.get(word1) or word_soft_counts[word1]
+        word_soft_counts_after_pair_added[word2] = changed_word_soft_counts_after_pair_added.get(word2) or word_soft_counts[word2]
+
+
         # Est. if word1 deleted
 
-        new_word_soft_counts_if_word1_deleted = {}
-        for word_in_pair in words_in_pair:
-            if word_in_pair == word1:
-                new_word_soft_counts_if_word1_deleted[word_in_pair] = 0.0
-            else:
-                new_word_soft_counts_if_word1_deleted[word_in_pair] = new_word_soft_counts[word_in_pair]
+        word_soft_counts_after_add_and_word1_delete = {}
+        word_soft_counts_after_add_and_word1_delete[word1] = 0.0
 
+        old_word1_soft_count = word_soft_counts_after_pair_added[word1]
         for word1_part in set(rep1):
-            new_word_soft_counts_if_word1_deleted[word1_part] = \
-                word_soft_counts[word1_part] - \
-                min(word_soft_counts[word1_part], rep1.count(word1_part)) + \
-                word_soft_counts[word1] * rep1.count(word1_part)
+            old_word1_part_soft_count = changed_word_soft_counts_after_pair_added.get(word1_part) or word_soft_counts[word1_part]
+            word_soft_counts_after_pair_added[word1_part] = old_word1_part_soft_count
+            word_soft_counts_after_add_and_word1_delete[word1_part] = \
+                old_word1_part_soft_count - \
+                min(old_word1_part_soft_count, rep1.count(word1_part)) + \
+                old_word1_soft_count * rep1.count(word1_part)
 
-        new_word_soft_counts_if_word1_deleted[pair_str] = pair_soft_counts[pair]
+        counts_after_pair_added_of_words_changed_on_word1_delete = \
+            sum([word_soft_counts_after_pair_added[word] for word in word_soft_counts_after_add_and_word1_delete])
 
-        old_counts_of_changed_old_words = sum([word_soft_counts[word] for word in new_word_soft_counts_if_word1_deleted if word != pair_str])
-        change_in_counts_word1_deleted = sum(new_word_soft_counts_if_word1_deleted.values()) - old_counts_of_changed_old_words
+        counts_after_add_and_word1_delete_of_all_words_changed = sum(word_soft_counts_after_add_and_word1_delete.values())
+        change_in_counts_word1_deleted = counts_after_add_and_word1_delete_of_all_words_changed - counts_after_pair_added_of_words_changed_on_word1_delete
 
-        total_counts_if_word1_deleted = old_total_soft_counts + change_in_counts_word1_deleted
+        total_counts_if_word1_deleted = total_soft_counts_after_pair_added + change_in_counts_word1_deleted
 
-        changed_words_new_dl = sum([new_word_soft_counts_if_word1_deleted[word]*log(new_word_soft_counts_if_word1_deleted[word]/total_counts_if_word1_deleted) for word in new_word_soft_counts_if_word1_deleted if new_word_soft_counts_if_word1_deleted[word]/total_counts_if_word1_deleted != 0])
-        changed_words_old_dl = sum([word_soft_counts[word]*log(word_soft_counts[word]/old_total_soft_counts) for word in new_word_soft_counts_if_word1_deleted if word != pair_str and word_soft_counts[word]/old_total_soft_counts != 0])
+        word1_deleted_changed_words_new_dl = \
+            -sum([word_soft_counts_after_add_and_word1_delete[word]*log(word_soft_counts_after_add_and_word1_delete[word]/total_counts_if_word1_deleted) for word in word_soft_counts_after_add_and_word1_delete if word_soft_counts_after_add_and_word1_delete[word]/total_counts_if_word1_deleted != 0])
+
+        word1_deleted_changed_words_old_dl = \
+            -sum([word_soft_counts_after_pair_added[word]*log(word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added) for word in word_soft_counts_after_add_and_word1_delete if word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added != 0])
 
         dl_delta_if_word1_deleted = \
-            (old_total_soft_counts - old_counts_of_changed_old_words) * \
-            log(total_counts_if_word1_deleted / old_total_soft_counts) - \
-            changed_words_new_dl + \
-            changed_words_old_dl
+            (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word1_delete) * \
+            log(total_counts_if_word1_deleted / total_soft_counts_after_pair_added) + \
+            word1_deleted_changed_words_new_dl - \
+            word1_deleted_changed_words_old_dl
 
 
         # Est. if word2 deleted
 
-        new_word_soft_counts_if_word2_deleted = {}
-        for word_in_pair in words_in_pair:
-            if word_in_pair == word2:
-                new_word_soft_counts_if_word2_deleted[word_in_pair] = 0.0
-            else:
-                new_word_soft_counts_if_word2_deleted[word_in_pair] = new_word_soft_counts[word_in_pair]
+        word_soft_counts_after_add_and_word2_delete = {}
+        word_soft_counts_after_add_and_word2_delete[word2] = 0.0
 
+        old_word2_soft_count = word_soft_counts_after_pair_added[word2]
         for word2_part in set(rep2):
-            new_word_soft_counts_if_word2_deleted[word2_part] = \
-                word_soft_counts[word2_part] - \
-                min(word_soft_counts[word2_part], rep1.count(word2_part)) + \
-                word_soft_counts[word2] * rep1.count(word2_part)
+            old_word2_part_soft_count = changed_word_soft_counts_after_pair_added.get(word2_part) or word_soft_counts[word2_part]
+            word_soft_counts_after_pair_added[word2_part] = old_word2_part_soft_count
+            word_soft_counts_after_add_and_word2_delete[word2_part] = \
+                old_word2_part_soft_count - \
+                min(old_word2_part_soft_count, rep2.count(word2_part)) + \
+                old_word2_soft_count * rep2.count(word2_part)
 
-        new_word_soft_counts_if_word2_deleted[pair_str] = pair_soft_counts[pair]
+        counts_after_pair_added_of_words_changed_on_word2_delete = \
+            sum([word_soft_counts_after_pair_added[word] for word in word_soft_counts_after_add_and_word2_delete])
 
-        old_counts_of_changed_old_words = sum([word_soft_counts[word] for word in new_word_soft_counts_if_word2_deleted if word != pair_str])
-        change_in_counts_word2_deleted = sum(new_word_soft_counts_if_word2_deleted.values()) - old_counts_of_changed_old_words
+        counts_after_add_and_word2_delete_of_all_words_changed = sum(word_soft_counts_after_add_and_word2_delete.values())
+        change_in_counts_word2_deleted = counts_after_add_and_word2_delete_of_all_words_changed - counts_after_pair_added_of_words_changed_on_word2_delete
 
-        total_counts_if_word2_deleted = old_total_soft_counts + change_in_counts_word2_deleted
+        total_counts_if_word2_deleted = total_soft_counts_after_pair_added + change_in_counts_word2_deleted
 
-        changed_words_new_dl = sum([new_word_soft_counts_if_word2_deleted[word]*log(new_word_soft_counts_if_word2_deleted[word]/total_counts_if_word2_deleted) for word in new_word_soft_counts_if_word2_deleted if new_word_soft_counts_if_word2_deleted[word]/total_counts_if_word2_deleted != 0])
-        changed_words_old_dl = sum([word_soft_counts[word]*log(word_soft_counts[word]/old_total_soft_counts) for word in new_word_soft_counts_if_word2_deleted if word != pair_str and word_soft_counts[word]/old_total_soft_counts != 0])
+        word2_deleted_changed_words_new_dl = \
+            -sum([word_soft_counts_after_add_and_word2_delete[word]*log(word_soft_counts_after_add_and_word2_delete[word]/total_counts_if_word2_deleted) for word in word_soft_counts_after_add_and_word2_delete if word_soft_counts_after_add_and_word2_delete[word]/total_counts_if_word2_deleted != 0])
+
+        word2_deleted_changed_words_old_dl = \
+            -sum([word_soft_counts_after_pair_added[word]*log(word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added) for word in word_soft_counts_after_add_and_word2_delete if word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added != 0])
 
         dl_delta_if_word2_deleted = \
-            (old_total_soft_counts - old_counts_of_changed_old_words) * \
-            log(total_counts_if_word2_deleted / old_total_soft_counts) - \
-            changed_words_new_dl + \
-            changed_words_old_dl
+            (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word2_delete) * \
+            log(total_counts_if_word2_deleted / total_soft_counts_after_pair_added) + \
+            word2_deleted_changed_words_new_dl - \
+            word2_deleted_changed_words_old_dl
+
 
         if dl_delta + min(dl_delta_if_word1_deleted,0) + min(dl_delta_if_word2_deleted,0) < 0:
             new_prob = pair_soft_counts[pair] / (old_total_soft_counts + change_in_counts)
