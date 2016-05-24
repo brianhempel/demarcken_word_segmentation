@@ -189,6 +189,8 @@ def Viterbi_nice_str(g, str):
     out = ""
     for word in best_rep:
         out += entry_nested_brackets_str(g, word)
+    out += "\n"
+    out += " ".join(best_rep)
     return out
 
 def forward_backward(g, utterances):
@@ -225,6 +227,11 @@ def description_length(g, utterances):
             dl += -log(prob) # Bits to represent this word
     return dl
 
+def print_description_length(g, utterances):
+    dl = description_length(grammar, utterances)
+    print "Description length: %f" % dl
+    print "Bits per char: %f" % (dl / sum([len(utterance) for utterance in utterances]))
+
 # DeMarcken just iterated 15 times and didn't
 # bother setting a rigorous criteria for convergence
 for iteration_number in range(1,16):
@@ -241,8 +248,7 @@ for iteration_number in range(1,16):
     grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances)
     grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances)
 
-    print "Description length: %f" % (description_length(grammar, utterances))
-    print "Bits per char: %f" % (description_length(grammar, utterances) / sum([len(utterance) for utterance in utterances]))
+    print_description_length(grammar, utterances)
 
     Viterbi_array = []
     longest_word_length = max([len(word) for word in grammar])
@@ -433,8 +439,7 @@ for iteration_number in range(1,16):
     grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances)
     grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances)
 
-    print "Description length: %f" % (description_length(grammar, utterances))
-    print "Bits per char: %f" % (description_length(grammar, utterances) / sum([len(utterance) for utterance in utterances]))
+    print_description_length(grammar, utterances)
 
     #       Refine linguistic properties of G to improve expected performance over U'.
     #           Delete parameters from G.
