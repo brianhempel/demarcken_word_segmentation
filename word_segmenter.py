@@ -342,16 +342,16 @@ for iteration_number in range(1,16):
         _, rep1 = grammar[word1]
         _, rep2 = grammar[word2]
         pair_str = word1 + word2
-        word_soft_counts_in_pair = {}
 
+        if pair_str in grammar or pair_str in new_entries:
+            continue
+
+        word_soft_counts_in_pair = {}
         pair_alphas = alphas(grammar, grammar_end_4grams, pair_str, longest_word_length)
         pair_betas = betas(grammar, grammar_start_4grams, pair_str, longest_word_length)
         for word, entry in grammar.items():
             word_prob, _ = entry
-            if not word_soft_counts_in_pair.get(word):
-                word_soft_counts_in_pair[word] = 0.0
-            word_soft_counts_in_pair[word] += \
-                soft_count_of_word_in_sentence(pair_alphas, pair_betas, pair_str, word, word_prob)
+            word_soft_counts_in_pair[word] = soft_count_of_word_in_sentence(pair_alphas, pair_betas, pair_str, word, word_prob)
 
         words_in_pair = filter(lambda word: word_soft_counts_in_pair[word] > 0, word_soft_counts_in_pair)
 
