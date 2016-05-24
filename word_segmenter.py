@@ -411,7 +411,7 @@ for iteration_number in range(1,16):
         for word1_part in set(rep1):
             new_word_soft_counts_if_word1_deleted[word1_part] = \
                 word_soft_counts[word1_part] - \
-                rep1.count(word1_part) + \
+                min(word_soft_counts[word1_part], rep1.count(word1_part)) + \
                 word_soft_counts[word1] * rep1.count(word1_part)
 
         new_word_soft_counts_if_word1_deleted[pair_str] = pair_soft_counts[pair]
@@ -443,7 +443,7 @@ for iteration_number in range(1,16):
         for word2_part in set(rep2):
             new_word_soft_counts_if_word2_deleted[word2_part] = \
                 word_soft_counts[word2_part] - \
-                rep1.count(word2_part) + \
+                min(word_soft_counts[word2_part], rep1.count(word2_part)) + \
                 word_soft_counts[word2] * rep1.count(word2_part)
 
         new_word_soft_counts_if_word2_deleted[pair_str] = pair_soft_counts[pair]
