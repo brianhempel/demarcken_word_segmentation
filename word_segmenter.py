@@ -491,8 +491,8 @@ for iteration_number in range(1,16):
             if new_word not in grammar and new_word not in new_entries:
                 new_entries[new_word] = grammar_entry
 
-    print "New entries:"
-    print new_entries.keys()
+    # print "New entries:"
+    # print new_entries.keys()
 
     new_grammar = {}
     new_grammar.update(grammar)
@@ -612,8 +612,8 @@ for iteration_number in range(1,16):
     normalize_grammar(new_grammar)
     grammar = new_grammar
 
-    print "Deleted entries:"
-    print deleted_words
+    # print "Deleted entries:"
+    # print deleted_words
 
     print "Grammar summary:"
     grammar_summary(grammar)
