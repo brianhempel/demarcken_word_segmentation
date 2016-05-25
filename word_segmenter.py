@@ -48,7 +48,7 @@ sentences = [re.sub(r'[^A-Za-z0-9]', '', sentence).lower() for sentence in raw_s
 #  (probability, string parts)
 
 # Let G be the set of terminals with uniform probabilities.
-initial_letters = list(string.lowercase + string.digits) #+ ["at"]
+initial_letters = list(string.lowercase + string.digits)
 grammar = {}
 for letter in initial_letters:
     entry = (1.0/len(initial_letters),[letter])
@@ -622,6 +622,4 @@ for iteration_number in range(1,16):
 
     # print [entry[0] for entry in grammar]
     print Viterbi_nice_str(grammar, grammar_end_4grams, sentences[0])
-
-# TODO make sure we handle duplicate word pairs in candidates e.g. [[pa][i]]  [[p][ai]]
 
