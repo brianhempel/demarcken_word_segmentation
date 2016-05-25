@@ -233,7 +233,7 @@ def Viterbi_nice_str(g, grammar_end_4grams, str):
 
 def trigrams(string):
     out = set()
-    for i in range(1,len(string)-3):
+    for i in range(len(string)-2):
         out.add(string[i:i+3])
     return out
     # return []
