@@ -157,13 +157,13 @@ def soft_count_of_word_in_sentence(alphas, betas, str, word, word_probability):
     if str == word and word_length > 1:
         return 0.0
     log_probability = -INF
-    i = string.find(str, word, 0)
+    i = str.find(word, 0)
     while i > -1:
         term = alphas[i] + \
             log(word_probability) + \
             betas[i+word_length]
         log_probability = log_add(log_probability,term)
-        i = string.find(str, word, i+1)
+        i = str.find(word, i+1)
 
     return 2**(log_probability - betas[0])
 
@@ -236,7 +236,6 @@ def trigrams(string):
     for i in range(len(string)-2):
         out.add(string[i:i+3])
     return out
-    # return []
 
 def forward_backward(g, utterances, utterances_trigrams):
     longest_word_length = max([len(word) for word in g])
@@ -349,7 +348,10 @@ for iteration_number in range(1,16):
         word_soft_counts_in_pair = {}
         pair_alphas = alphas(grammar, grammar_end_4grams, pair_str, longest_word_length)
         pair_betas = betas(grammar, grammar_start_4grams, pair_str, longest_word_length)
+        pair_trigrams = trigrams(pair_str)
         for word, entry in grammar.items():
+            if len(word) >= 3 and (word[0:3] not in pair_trigrams or word[-3:] not in pair_trigrams):
+                continue
             word_prob, _ = entry
             word_soft_counts_in_pair[word] = soft_count_of_word_in_sentence(pair_alphas, pair_betas, pair_str, word, word_prob)
 
