@@ -34,15 +34,15 @@ INF = float("inf")
 #
 
 # read in the file
-try:
-    FILEPATH = sys.argv[1]
-except:
-    FILEPATH = "brown_nolines1000.txt"
+FILEPATH = sys.argv[1]
+OUTBASENAME = sys.argv[2]
 
 raw_sentences = open(FILEPATH).readlines()
 
 # remove non-alphanumeric characters
-sentences = [re.sub(r'[^A-Za-z0-9]', '', sentence).lower() for sentence in raw_sentences if sentence.strip()]
+# convert consecutive hypens/spaces to spaces
+true_sentences = [re.sub(r'[\s-]+', ' ', re.sub(r'[^A-Za-z0-9\s-]', '', sentence)).lower() for sentence in raw_sentences if sentence.strip()]
+sentences = [re.sub(r'\s+', '', sentence) for sentence in true_sentences]
 
 # Entries in the grammar are...
 #  (probability, string parts)
@@ -67,11 +67,11 @@ def normalize_grammar(g):
 def grammar_summary(g):
     print "Total probabilityi: %f" % (sum([entry[0] for entry in g.values()]))
     print "Number of entries: %d" % len(grammar)
-    sorted_words = sorted(g.keys(), key=lambda word: -g[word][0])
-    print "Most probable words:"
-    print [(word, g[word][0]) for word in sorted_words[0:10]]
-    print "Least probable words: "
-    print [(word, g[word][0]) for word in sorted_words[-10:]]
+    # sorted_words = sorted(g.keys(), key=lambda word: -g[word][0])
+    # print "Most probable words:"
+    # print [(word, g[word][0]) for word in sorted_words[0:10]]
+    # print "Least probable words: "
+    # print [(word, g[word][0]) for word in sorted_words[-10:]]
 
 def log(x):
     return math.log(x,2)
@@ -216,19 +216,26 @@ def Viterbi(g,grammar_end_4grams,str,longest_word_length=10000000):
 def entry_nested_brackets_str(g, word):
     _, rep = g[word]
     if len(word) == 1: # Terminal character
-        return word
+        return "[" + word + "]"
     else:
         return "[" + "".join([entry_nested_brackets_str(g, part) for part in rep]) + "]"
+
+def brackets_str(g, best_rep):
+    out = ""
+    for word in best_rep:
+        out += entry_nested_brackets_str(g, word)
+    return out
+
+def spaces_str(best_rep):
+    return " ".join(best_rep)
 
 # "[[th][e]][f][u][lt]"
 def Viterbi_nice_str(g, grammar_end_4grams, str):
     longest_word_length = max([len(word) for word in g])
     best_rep = Viterbi(g,grammar_end_4grams,str,longest_word_length)
-    out = ""
-    for word in best_rep:
-        out += entry_nested_brackets_str(g, word)
+    out = brackets_str(g, best_rep)
     out += "\n"
-    out += " ".join(best_rep)
+    out += spaces_str(best_rep)
     return out
 
 def trigrams(string):
@@ -623,3 +630,38 @@ for iteration_number in range(1,16):
     # print [entry[0] for entry in grammar]
     print Viterbi_nice_str(grammar, grammar_end_4grams, sentences[0])
 
+
+longest_word_length = max([len(word) for word in grammar])
+grammar_end_4grams  = calc_grammar_end_4grams(grammar)
+
+brackets_file     = open(OUTBASENAME + "_bracket_segmentation.txt", "w")
+spaces_file       = open(OUTBASENAME + "_spaces_segmentation.txt", "w")
+truth_file        = open(OUTBASENAME + "_true_segmentation.txt", "w")
+lexicon_file      = open(OUTBASENAME + "_discovered_lexicon.txt", "w")
+true_lexicon_file = open(OUTBASENAME + "_true_lexicon.txt", "w")
+
+for word in sorted(grammar.keys(), key=lambda word: -grammar[word][0]):
+    lexicon_file.write(word + "\n")
+
+true_word_counts = {}
+for sentence in true_sentences:
+    for word in sentence.split():
+        true_word_counts[word] = true_word_counts.get(word, 0) + 1
+
+for word in sorted(true_word_counts.keys(), key=lambda word: -true_word_counts[word]):
+    true_lexicon_file.write(word + "\n")
+
+for i in range(len(true_sentences)):
+    sentence = sentences[i]
+    true_sentence = true_sentences[i]
+
+    best_rep = Viterbi(grammar,grammar_end_4grams,sentence,longest_word_length)
+    brackets_file.write(brackets_str(grammar, best_rep) + "\n")
+    spaces_file.write(spaces_str(best_rep) + "\n")
+    truth_file.write(true_sentence + "\n")
+
+brackets_file.close()
+spaces_file.close()
+truth_file.close()
+lexicon_file.close()
+true_lexicon_file.close()
