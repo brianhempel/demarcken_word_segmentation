@@ -340,7 +340,6 @@ for iteration_number in range(1,16):
                 soft_count_of_pair_in_sentence(grammar, utterance_alphas[i], utterance_betas[i], utterances[i], pair)
 
     old_total_soft_counts = sum(word_soft_counts.values())
-    old_dl = sum([-word_soft_counts[word] * log(grammar[word][0]) for word in grammar if grammar[word][0] != 0.0])
 
     new_entries = {}
     for pair in candidate_pairs:
