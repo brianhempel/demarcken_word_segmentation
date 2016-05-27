@@ -380,8 +380,6 @@ for iteration_number in range(1,16):
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
     O1_g_char_probs = O1_grammar_char_probs(grammar)
 
-    print O1_g_char_probs
-
     print_description_length(grammar, sentences)
 
     grammar_start_4grams = calc_grammar_start_4grams(grammar)
