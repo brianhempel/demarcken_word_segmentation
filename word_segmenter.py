@@ -555,7 +555,7 @@ for iteration_number in range(1,16):
         if candidate_rep != Viterbi(grammar, grammar_end_4grams, candidate_word):
             continue
 
-        old_counts_of_changed_old_words = sum([word_soft_counts[rep_part] for rep_part in candidate_rep]) + word_soft_counts[candidate_word]
+        old_counts_of_changed_old_words = sum([word_soft_counts[rep_part] for rep_part in set(candidate_rep)]) + word_soft_counts[candidate_word]
 
         new_counts_of_changed_words = {}
         for rep_part in candidate_rep:
