@@ -48,10 +48,10 @@ sentences = [re.sub(r'\s+', '', sentence) for sentence in true_sentences]
 #  (probability, string parts)
 
 # Let G be the set of terminals with uniform probabilities.
-initial_letters = list(string.lowercase + string.digits)
+INITIAL_LETTERS = list(string.lowercase + string.digits)
 grammar = {}
-for letter in initial_letters:
-    entry = (1.0/len(initial_letters),[letter])
+for letter in INITIAL_LETTERS:
+    entry = (1.0/len(INITIAL_LETTERS),[letter])
     grammar[letter] = entry
 
 def strings_in_grammar(g):
@@ -271,7 +271,7 @@ def forward_backward(g, sentences, sentences_trigrams):
     return (new_grammar, word_soft_counts, sentence_alphas, sentence_betas)
 
 
-def grammar_char_probs(g):
+def O0_grammar_char_probs(g):
     char_counts = {}
 
     for word in g:
@@ -287,19 +287,59 @@ def grammar_char_probs(g):
     return char_probs
 
 
+# O(1) char probability model
+# first key is prior char
+# key "" means no prior char
+def O1_grammar_char_probs(g):
+    O0_char_probs = O0_grammar_char_probs(g)
+
+    char_counts = {}
+
+    # For letter combinations not seen, what should be our default count?
+    # Let's use the O0 probability as the default count.
+    for prior_char in (INITIAL_LETTERS + [""]):
+        char_counts[prior_char] = {}
+        for char in INITIAL_LETTERS:
+            char_counts[prior_char][char] = O0_char_probs[char]
+
+    for word in g:
+        char_counts[""][word[0]] += 1.0
+        for i in range(1, len(word)):
+            prior_char = word[i-1]
+            char_counts[prior_char][word[i]] += 1.0
+
+    O1_char_probs = {}
+    for prior_char, counts_given_prior_char in char_counts.items():
+        O1_char_probs[prior_char] = {}
+        total_chars_given_prior = sum(counts_given_prior_char.values())
+        for char in counts_given_prior_char:
+            O1_char_probs[prior_char][char] = float(counts_given_prior_char[char]) / total_chars_given_prior
+
+    return O1_char_probs
+
+
+# Description length of a string in the lexicon
+def lexicon_dl(O1_g_char_probs, string):
+    dl = -log(O1_g_char_probs[""][string[0]])
+    for i in range(1, len(string)):
+        prior_char = string[i-1]
+        dl += -log(O1_g_char_probs[prior_char][string[i]])
+
+    return dl
+
+
 def description_length(g, sentences):
     dl = 0.0
     grammar_end_4grams = calc_grammar_end_4grams(g)
     longest_word_length = max([len(word) for word in g])
-    g_char_probs = grammar_char_probs(g)
+    O1_g_char_probs = O1_grammar_char_probs(g)
 
     for word in g:
         # Let's just say terminals are 10 bits. They're rounding error on the total number anyway.
         if len(word) == 1:
             dl += 10
-            continue
-        for char in list(word):
-            dl += -log(g_char_probs[char]) # Bits to represent this char
+        else:
+            dl += lexicon_dl(O1_g_char_probs, word)
 
     for sentence in sentences:
         words = Viterbi(g, grammar_end_4grams, sentence, longest_word_length)
@@ -338,7 +378,9 @@ for iteration_number in range(1,16):
 
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
-    g_char_probs = grammar_char_probs(grammar)
+    O1_g_char_probs = O1_grammar_char_probs(grammar)
+
+    print O1_g_char_probs
 
     print_description_length(grammar, sentences)
 
@@ -432,10 +474,7 @@ for iteration_number in range(1,16):
         changed_words_new_dl = sum([new_word_soft_counts[word]*log(new_word_soft_counts[word]/new_total_soft_counts) for word in new_word_soft_counts if new_word_soft_counts[word]/new_total_soft_counts != 0])
         changed_words_old_dl = sum([word_soft_counts[word]*log(word_soft_counts[word]/old_total_soft_counts) for word in new_word_soft_counts if word != pair_str and word_soft_counts[word]/old_total_soft_counts != 0])
 
-        lexicon_dl_delta = 0.0
-        # Account for representing this word in the lexicon
-        for char in list(pair_str):
-            lexicon_dl_delta += -log(g_char_probs[char])
+        lexicon_dl_delta = lexicon_dl(O1_g_char_probs, pair_str)
 
         # Equation (5.8) version 2
         dl_delta = \
@@ -483,10 +522,7 @@ for iteration_number in range(1,16):
         word1_deleted_changed_words_old_dl = \
             -sum([word_soft_counts_after_pair_added[word]*log(word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added) for word in word_soft_counts_after_add_and_word1_delete if word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added != 0])
 
-        lexicon_dl_delta_if_word1_deleted = 0.0
-        # Account for representing this word from the lexicon
-        for char in list(word1):
-            lexicon_dl_delta_if_word1_deleted -= -log(g_char_probs[char])
+        lexicon_dl_delta_if_word1_deleted = -lexicon_dl(O1_g_char_probs, word1)
 
         dl_delta_if_word1_deleted = \
             (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word1_delete) * \
@@ -523,10 +559,7 @@ for iteration_number in range(1,16):
         word2_deleted_changed_words_old_dl = \
             -sum([word_soft_counts_after_pair_added[word]*log(word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added) for word in word_soft_counts_after_add_and_word2_delete if word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added != 0])
 
-        lexicon_dl_delta_if_word2_deleted = 0.0
-        # Account for representing this word from the lexicon
-        for char in list(word2):
-            lexicon_dl_delta_if_word2_deleted -= -log(g_char_probs[char])
+        lexicon_dl_delta_if_word2_deleted = -lexicon_dl(O1_g_char_probs, word2)
 
         dl_delta_if_word2_deleted = \
             (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word2_delete) * \
@@ -577,7 +610,7 @@ for iteration_number in range(1,16):
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
-    g_char_probs = grammar_char_probs(grammar)
+    O1_g_char_probs = O1_grammar_char_probs(grammar)
 
     print_description_length(grammar, sentences)
 
@@ -641,9 +674,7 @@ for iteration_number in range(1,16):
             entropy_changed_word_in_old_grammar -= log(word_soft_counts[word]/old_total_soft_counts)*word_soft_counts[word]
 
         # Removing word from dictionary will reduce the counts of the chars that constitute it
-        lexicon_dl_delta_for_delete = 0.0
-        for char in list(candidate_word):
-            lexicon_dl_delta_for_delete -= -log(g_char_probs[char])
+        lexicon_dl_delta_for_delete = -lexicon_dl(O1_g_char_probs, candidate_word)
 
         dl_delta_for_delete = \
             (old_total_soft_counts - old_counts_of_changed_old_words) * \
