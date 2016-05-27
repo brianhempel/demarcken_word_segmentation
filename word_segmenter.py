@@ -214,11 +214,11 @@ def Viterbi(g,grammar_end_4grams,str,longest_word_length=10000000):
     return R[i]
 
 def entry_nested_brackets_str(g, word):
-    _, rep = g[word]
+    # _, rep = g[word]
     if len(word) == 1: # Terminal character
         return "[" + word + "]"
     else:
-        return "[" + "".join([entry_nested_brackets_str(g, part) for part in rep]) + "]"
+        return "[" + "".join([entry_nested_brackets_str(g, part) for part in list(word)]) + "]"
 
 def brackets_str(g, best_rep):
     out = ""
@@ -238,57 +238,81 @@ def Viterbi_nice_str(g, grammar_end_4grams, str):
     out += spaces_str(best_rep)
     return out
 
+
 def trigrams(string):
     out = set()
     for i in range(len(string)-2):
         out.add(string[i:i+3])
     return out
 
-def forward_backward(g, utterances, utterances_trigrams):
+
+def forward_backward(g, sentences, sentences_trigrams):
     longest_word_length = max([len(word) for word in g])
     grammar_start_4grams = calc_grammar_start_4grams(g)
     grammar_end_4grams = calc_grammar_end_4grams(g)
-    utterance_alphas = [alphas(g, grammar_end_4grams, utterance, longest_word_length) for utterance in utterances]
-    utterance_betas  = [betas(g, grammar_start_4grams, utterance, longest_word_length)  for utterance in utterances]
+    sentence_alphas = [alphas(g, grammar_end_4grams, sentence, longest_word_length) for sentence in sentences]
+    sentence_betas  = [betas(g, grammar_start_4grams, sentence, longest_word_length)  for sentence in sentences]
 
     word_soft_counts = {}
     for word, entry in g.items():
         word_prob, _ = entry
         word_sc = 0.0
         word_len = len(word)
-        for i in xrange(len(utterances)):
-            if word_len >= 3 and (word[0:3] not in utterances_trigrams[i] or word[-3:] not in utterances_trigrams[i]):
+        for i in xrange(len(sentences)):
+            if word_len >= 3 and (word[0:3] not in sentences_trigrams[i] or word[-3:] not in sentences_trigrams[i]):
                 continue
-            if word_len >= 5 and (word[2:5] not in utterances_trigrams[i] or word[-5:-2] not in utterances_trigrams[i]):
+            if word_len >= 5 and (word[2:5] not in sentences_trigrams[i] or word[-5:-2] not in sentences_trigrams[i]):
                 continue
-            word_sc += soft_count_of_word_in_sentence(utterance_alphas[i], utterance_betas[i], utterances[i], word, word_prob)
+            word_sc += soft_count_of_word_in_sentence(sentence_alphas[i], sentence_betas[i], sentences[i], word, word_prob)
         word_soft_counts[word] = word_sc
+
+    # Now, count up the dictionary
+    for word in g:
+        for char in list(word):
+            word_soft_counts[char] = word_soft_counts.get(char, 0.0) + 1.0
 
     new_grammar = update_grammar(g, word_soft_counts)
 
-    return (new_grammar, word_soft_counts, utterance_alphas, utterance_betas)
+    return (new_grammar, word_soft_counts, sentence_alphas, sentence_betas)
 
-def description_length(g, utterances):
+
+def description_length(g, sentences):
     dl = 0.0
     grammar_end_4grams = calc_grammar_end_4grams(g)
     longest_word_length = max([len(word) for word in g])
-    for utterance in utterances:
+
+    for word in g:
         # Let's just say terminals are 10 bits. They're rounding error on the total number anyway.
-        if len(utterance) == 1:
+        if len(word) == 1:
             dl += 10
             continue
-        words = Viterbi(g, grammar_end_4grams, utterance, longest_word_length)
+        for char in list(word):
+            char_prob = g[char][0]
+            if char_prob == 0:
+                continue
+            dl += -log(char_prob) # Bits to represent this char
+
+    for sentence in sentences:
+        words = Viterbi(g, grammar_end_4grams, sentence, longest_word_length)
         for word in words:
             prob = g[word][0]
             if prob == 0:
                 continue
             dl += -log(prob) # Bits to represent this word
+
     return dl
 
-def print_description_length(g, utterances):
-    dl = description_length(grammar, utterances)
+
+def print_description_length(g, sentences):
+    dl = description_length(grammar, sentences)
+    sentence_char_count = sum([len(sentence) for sentence in sentences])
+    grammar_char_count  = sum([len(word) for word in grammar])
     print "Description length: %f" % dl
-    print "Bits per char: %f" % (dl / sum([len(utterance) for utterance in utterances]))
+    print "Bits per char: %f" % (dl / (sentence_char_count + grammar_char_count))
+
+
+
+sentences_trigrams = [trigrams(sentence) for sentence in sentences]
 
 # DeMarcken just iterated 15 times and didn't
 # bother setting a rigorous criteria for convergence
@@ -297,23 +321,23 @@ for iteration_number in range(1,16):
     print
     print "#### Iteration %d ####" % iteration_number
     #   Let U' = U + G
-    utterances = strings_in_grammar(grammar) + sentences
-    utterances_trigrams = [trigrams(utterance) for utterance in utterances]
+    # utterances = strings_in_grammar(grammar) + sentences
+    # utterances_trigrams = [trigrams(utterance) for utterance in utterances]
 
     #       Optimize stochastic properties of G over U'.
     #           Perform optimization via 2 steps of the forward-backward algorithm.
 
-    grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances, utterances_trigrams)
-    grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances, utterances_trigrams)
+    grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
+    grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
 
-    print_description_length(grammar, utterances)
+    print_description_length(grammar, sentences)
 
     grammar_start_4grams = calc_grammar_start_4grams(grammar)
     grammar_end_4grams   = calc_grammar_end_4grams(grammar)
     longest_word_length  = max([len(word) for word in grammar])
 
     Viterbi_array = []
-    for sentence in utterances:
+    for sentence in sentences:
         Viterbi_array.append(Viterbi(grammar,grammar_end_4grams,sentence,longest_word_length))
 
     Viterbi_pair_array = []
@@ -331,13 +355,13 @@ for iteration_number in range(1,16):
         pair_soft_counts[pair] = 0.0
         pair_str = word1 + word2
         pair_str_len = len(pair_str)
-        for i in xrange(len(utterances)):
-            if pair_str_len >= 3 and (pair_str[0:3] not in utterances_trigrams[i] or pair_str[-3:] not in utterances_trigrams[i]):
+        for i in xrange(len(sentences)):
+            if pair_str_len >= 3 and (pair_str[0:3] not in sentences_trigrams[i] or pair_str[-3:] not in sentences_trigrams[i]):
                 continue
-            if pair_str_len >= 5 and (pair_str[2:5] not in utterances_trigrams[i] or pair_str[-5:-2] not in utterances_trigrams[i]):
+            if pair_str_len >= 5 and (pair_str[2:5] not in sentences_trigrams[i] or pair_str[-5:-2] not in sentences_trigrams[i]):
                 continue
             pair_soft_counts[pair] += \
-                soft_count_of_pair_in_sentence(grammar, utterance_alphas[i], utterance_betas[i], utterances[i], pair)
+                soft_count_of_pair_in_sentence(grammar, sentence_alphas[i], sentence_betas[i], sentences[i], pair)
 
     old_total_soft_counts = sum(word_soft_counts.values())
 
@@ -366,8 +390,7 @@ for iteration_number in range(1,16):
         new_word_soft_counts = {}
         for word_in_pair in words_in_pair:
             new_word_soft_counts[word_in_pair] = \
-                word_soft_counts[word_in_pair] + \
-                word_soft_counts_in_pair[word_in_pair] - \
+                word_soft_counts[word_in_pair] - \
                 min(pair_soft_counts[pair] * word_soft_counts_in_pair[word_in_pair], word_soft_counts[word_in_pair])
                 # ^^^ Sometimes the pair will be used more than the constituant
                 # would be. This is a departure from the thesis. Prevents soft
@@ -383,6 +406,10 @@ for iteration_number in range(1,16):
                 print pair_soft_counts[pair]
                 print word_soft_counts_in_pair[word_in_pair]
                 # new_word_soft_counts[word_in_pair] = 0.0
+
+        # Account for representing this word in the lexicon
+        for char in list(pair_str):
+            new_word_soft_counts[char] = new_word_soft_counts.get(char, word_soft_counts[char]) + 1.0
 
         new_word_soft_counts[pair_str] = pair_soft_counts[pair]
 
@@ -427,9 +454,14 @@ for iteration_number in range(1,16):
             old_word1_part_soft_count = changed_word_soft_counts_after_pair_added.get(word1_part) or word_soft_counts[word1_part]
             word_soft_counts_after_pair_added[word1_part] = old_word1_part_soft_count
             word_soft_counts_after_add_and_word1_delete[word1_part] = \
-                old_word1_part_soft_count - \
-                min(old_word1_part_soft_count, rep1.count(word1_part)) + \
+                old_word1_part_soft_count + \
                 old_word1_soft_count * rep1.count(word1_part)
+
+        # Removing word from dictionary will reduce the counts of the chars that constitute it
+        for char in list(word1):
+            old_char_soft_count = changed_word_soft_counts_after_pair_added.get(char) or word_soft_counts[char]
+            word_soft_counts_after_pair_added[char] = old_char_soft_count
+            word_soft_counts_after_add_and_word1_delete[char] = max(0.0, word_soft_counts_after_add_and_word1_delete.get(char, old_char_soft_count)-1.0)
 
         counts_after_pair_added_of_words_changed_on_word1_delete = \
             sum([word_soft_counts_after_pair_added[word] for word in word_soft_counts_after_add_and_word1_delete])
@@ -462,9 +494,14 @@ for iteration_number in range(1,16):
             old_word2_part_soft_count = changed_word_soft_counts_after_pair_added.get(word2_part) or word_soft_counts[word2_part]
             word_soft_counts_after_pair_added[word2_part] = old_word2_part_soft_count
             word_soft_counts_after_add_and_word2_delete[word2_part] = \
-                old_word2_part_soft_count - \
-                min(old_word2_part_soft_count, rep2.count(word2_part)) + \
+                old_word2_part_soft_count + \
                 old_word2_soft_count * rep2.count(word2_part)
+
+        # Removing word from dictionary will reduce the counts of the chars that constitute it
+        for char in list(word2):
+            old_char_soft_count = changed_word_soft_counts_after_pair_added.get(char) or word_soft_counts[char]
+            word_soft_counts_after_pair_added[char] = old_char_soft_count
+            word_soft_counts_after_add_and_word2_delete[char] = max(0.0, word_soft_counts_after_add_and_word2_delete.get(char, old_char_soft_count)-1.0)
 
         counts_after_pair_added_of_words_changed_on_word2_delete = \
             sum([word_soft_counts_after_pair_added[word] for word in word_soft_counts_after_add_and_word2_delete])
@@ -519,17 +556,17 @@ for iteration_number in range(1,16):
     print Viterbi_nice_str(grammar, grammar_end_4grams, sentences[0])
 
     #   Set U' = U + G.
-    utterances = strings_in_grammar(grammar) + sentences
-    utterances_trigrams = [trigrams(utterance) for utterance in utterances]
+    # utterances = strings_in_grammar(grammar) + sentences
+    # utterances_trigrams = [trigrams(utterance) for utterance in utterances]
 
     #       Optimize stochastic properties of G over U'
     #           Perform optimization via 3 steps of the forward-backward algorithm.
 
-    grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances, utterances_trigrams)
-    grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances, utterances_trigrams)
-    grammar, word_soft_counts, utterance_alphas, utterance_betas = forward_backward(grammar, utterances, utterances_trigrams)
+    grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
+    grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
+    grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
 
-    print_description_length(grammar, utterances)
+    print_description_length(grammar, sentences)
 
     #       Refine linguistic properties of G to improve expected performance over U'.
     #           Delete parameters from G.
@@ -554,11 +591,19 @@ for iteration_number in range(1,16):
         if candidate_rep != Viterbi(grammar, grammar_end_4grams, candidate_word):
             continue
 
-        old_counts_of_changed_old_words = sum([word_soft_counts[rep_part] for rep_part in set(candidate_rep)]) + word_soft_counts[candidate_word]
+        words_changing = set(candidate_rep).union(list(candidate_word))
+
+        old_counts_of_changed_old_words = sum([word_soft_counts[rep_part] for rep_part in words_changing]) + word_soft_counts[candidate_word]
 
         new_counts_of_changed_words = {}
         for rep_part in candidate_rep:
-            new_counts_of_changed_words[rep_part] = max(0, word_soft_counts[rep_part] + candidate_rep.count(rep_part)*word_soft_counts[candidate_word] - candidate_rep.count(rep_part))
+            new_counts_of_changed_words[rep_part] = max(0, word_soft_counts[rep_part] + candidate_rep.count(rep_part)*word_soft_counts[candidate_word])
+
+        # Removing word from dictionary will reduce the counts of the chars that constitute it
+        for char in list(candidate_word):
+            old_char_soft_count = word_soft_counts[char]
+            new_counts_of_changed_words[char] = max(0.0, new_counts_of_changed_words.get(char, old_char_soft_count)-1.0)
+
         new_counts_of_changed_words[candidate_word] = 0.0
 
         new_total_counts_of_changed_words = sum(new_counts_of_changed_words.values())
