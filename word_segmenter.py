@@ -266,20 +266,32 @@ def forward_backward(g, sentences, sentences_trigrams):
             word_sc += soft_count_of_word_in_sentence(sentence_alphas[i], sentence_betas[i], sentences[i], word, word_prob)
         word_soft_counts[word] = word_sc
 
-    # Now, count up the dictionary
-    for word in g:
-        for char in list(word):
-            word_soft_counts[char] = word_soft_counts.get(char, 0.0) + 1.0
-
     new_grammar = update_grammar(g, word_soft_counts)
 
     return (new_grammar, word_soft_counts, sentence_alphas, sentence_betas)
+
+
+def grammar_char_probs(g):
+    char_counts = {}
+
+    for word in g:
+        for char in list(word):
+            char_counts[char] = char_counts.get(char, 0) + 1
+
+    total_chars = sum(char_counts.values())
+
+    char_probs = {}
+    for char in char_counts:
+        char_probs[char] = float(char_counts[char]) / total_chars
+
+    return char_probs
 
 
 def description_length(g, sentences):
     dl = 0.0
     grammar_end_4grams = calc_grammar_end_4grams(g)
     longest_word_length = max([len(word) for word in g])
+    g_char_probs = grammar_char_probs(g)
 
     for word in g:
         # Let's just say terminals are 10 bits. They're rounding error on the total number anyway.
@@ -287,10 +299,7 @@ def description_length(g, sentences):
             dl += 10
             continue
         for char in list(word):
-            char_prob = g[char][0]
-            if char_prob == 0:
-                continue
-            dl += -log(char_prob) # Bits to represent this char
+            dl += -log(g_char_probs[char]) # Bits to represent this char
 
     for sentence in sentences:
         words = Viterbi(g, grammar_end_4grams, sentence, longest_word_length)
@@ -329,6 +338,7 @@ for iteration_number in range(1,16):
 
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
+    g_char_probs = grammar_char_probs(grammar)
 
     print_description_length(grammar, sentences)
 
@@ -407,10 +417,6 @@ for iteration_number in range(1,16):
                 print word_soft_counts_in_pair[word_in_pair]
                 # new_word_soft_counts[word_in_pair] = 0.0
 
-        # Account for representing this word in the lexicon
-        for char in list(pair_str):
-            new_word_soft_counts[char] = new_word_soft_counts.get(char, word_soft_counts[char]) + 1.0
-
         new_word_soft_counts[pair_str] = pair_soft_counts[pair]
 
         old_counts_of_changed_old_words = sum([word_soft_counts[word] for word in words_in_pair])
@@ -426,12 +432,18 @@ for iteration_number in range(1,16):
         changed_words_new_dl = sum([new_word_soft_counts[word]*log(new_word_soft_counts[word]/new_total_soft_counts) for word in new_word_soft_counts if new_word_soft_counts[word]/new_total_soft_counts != 0])
         changed_words_old_dl = sum([word_soft_counts[word]*log(word_soft_counts[word]/old_total_soft_counts) for word in new_word_soft_counts if word != pair_str and word_soft_counts[word]/old_total_soft_counts != 0])
 
+        lexicon_dl_delta = 0.0
+        # Account for representing this word in the lexicon
+        for char in list(pair_str):
+            lexicon_dl_delta += -log(g_char_probs[char])
+
         # Equation (5.8) version 2
         dl_delta = \
             (old_total_soft_counts - old_counts_of_changed_old_words) * \
             log(new_total_soft_counts / old_total_soft_counts) - \
             changed_words_new_dl + \
-            changed_words_old_dl
+            changed_words_old_dl + \
+            lexicon_dl_delta
 
 
         # Prepare for deletion estimation
@@ -457,12 +469,6 @@ for iteration_number in range(1,16):
                 old_word1_part_soft_count + \
                 old_word1_soft_count * rep1.count(word1_part)
 
-        # Removing word from dictionary will reduce the counts of the chars that constitute it
-        for char in list(word1):
-            old_char_soft_count = changed_word_soft_counts_after_pair_added.get(char) or word_soft_counts[char]
-            word_soft_counts_after_pair_added[char] = old_char_soft_count
-            word_soft_counts_after_add_and_word1_delete[char] = max(0.0, word_soft_counts_after_add_and_word1_delete.get(char, old_char_soft_count)-1.0)
-
         counts_after_pair_added_of_words_changed_on_word1_delete = \
             sum([word_soft_counts_after_pair_added[word] for word in word_soft_counts_after_add_and_word1_delete])
 
@@ -477,11 +483,17 @@ for iteration_number in range(1,16):
         word1_deleted_changed_words_old_dl = \
             -sum([word_soft_counts_after_pair_added[word]*log(word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added) for word in word_soft_counts_after_add_and_word1_delete if word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added != 0])
 
+        lexicon_dl_delta_if_word1_deleted = 0.0
+        # Account for representing this word from the lexicon
+        for char in list(word1):
+            lexicon_dl_delta_if_word1_deleted -= -log(g_char_probs[char])
+
         dl_delta_if_word1_deleted = \
             (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word1_delete) * \
             log(total_counts_if_word1_deleted / total_soft_counts_after_pair_added) + \
             word1_deleted_changed_words_new_dl - \
-            word1_deleted_changed_words_old_dl
+            word1_deleted_changed_words_old_dl + \
+            lexicon_dl_delta_if_word1_deleted
 
 
         # Est. if word2 deleted
@@ -497,12 +509,6 @@ for iteration_number in range(1,16):
                 old_word2_part_soft_count + \
                 old_word2_soft_count * rep2.count(word2_part)
 
-        # Removing word from dictionary will reduce the counts of the chars that constitute it
-        for char in list(word2):
-            old_char_soft_count = changed_word_soft_counts_after_pair_added.get(char) or word_soft_counts[char]
-            word_soft_counts_after_pair_added[char] = old_char_soft_count
-            word_soft_counts_after_add_and_word2_delete[char] = max(0.0, word_soft_counts_after_add_and_word2_delete.get(char, old_char_soft_count)-1.0)
-
         counts_after_pair_added_of_words_changed_on_word2_delete = \
             sum([word_soft_counts_after_pair_added[word] for word in word_soft_counts_after_add_and_word2_delete])
 
@@ -517,11 +523,17 @@ for iteration_number in range(1,16):
         word2_deleted_changed_words_old_dl = \
             -sum([word_soft_counts_after_pair_added[word]*log(word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added) for word in word_soft_counts_after_add_and_word2_delete if word_soft_counts_after_pair_added[word]/total_soft_counts_after_pair_added != 0])
 
+        lexicon_dl_delta_if_word2_deleted = 0.0
+        # Account for representing this word from the lexicon
+        for char in list(word2):
+            lexicon_dl_delta_if_word2_deleted -= -log(g_char_probs[char])
+
         dl_delta_if_word2_deleted = \
             (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word2_delete) * \
             log(total_counts_if_word2_deleted / total_soft_counts_after_pair_added) + \
             word2_deleted_changed_words_new_dl - \
-            word2_deleted_changed_words_old_dl
+            word2_deleted_changed_words_old_dl + \
+            lexicon_dl_delta_if_word2_deleted
 
 
         if dl_delta + min(dl_delta_if_word1_deleted,0) + min(dl_delta_if_word2_deleted,0) < 0:
@@ -565,6 +577,7 @@ for iteration_number in range(1,16):
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
     grammar, word_soft_counts, sentence_alphas, sentence_betas = forward_backward(grammar, sentences, sentences_trigrams)
+    g_char_probs = grammar_char_probs(grammar)
 
     print_description_length(grammar, sentences)
 
@@ -591,18 +604,11 @@ for iteration_number in range(1,16):
         if candidate_rep != Viterbi(grammar, grammar_end_4grams, candidate_word):
             continue
 
-        words_changing = set(candidate_rep).union(list(candidate_word))
-
-        old_counts_of_changed_old_words = sum([word_soft_counts[rep_part] for rep_part in words_changing]) + word_soft_counts[candidate_word]
+        old_counts_of_changed_old_words = sum([word_soft_counts[rep_part] for rep_part in set(candidate_rep)]) + word_soft_counts[candidate_word]
 
         new_counts_of_changed_words = {}
         for rep_part in candidate_rep:
             new_counts_of_changed_words[rep_part] = max(0, word_soft_counts[rep_part] + candidate_rep.count(rep_part)*word_soft_counts[candidate_word])
-
-        # Removing word from dictionary will reduce the counts of the chars that constitute it
-        for char in list(candidate_word):
-            old_char_soft_count = word_soft_counts[char]
-            new_counts_of_changed_words[char] = max(0.0, new_counts_of_changed_words.get(char, old_char_soft_count)-1.0)
 
         new_counts_of_changed_words[candidate_word] = 0.0
 
@@ -634,11 +640,17 @@ for iteration_number in range(1,16):
                 continue
             entropy_changed_word_in_old_grammar -= log(word_soft_counts[word]/old_total_soft_counts)*word_soft_counts[word]
 
+        # Removing word from dictionary will reduce the counts of the chars that constitute it
+        lexicon_dl_delta_for_delete = 0.0
+        for char in list(candidate_word):
+            lexicon_dl_delta_for_delete -= -log(g_char_probs[char])
+
         dl_delta_for_delete = \
             (old_total_soft_counts - old_counts_of_changed_old_words) * \
             math.log(new_total_soft_counts / old_total_soft_counts, 2) + \
-            entropy_changed_word_in_new_grammar -\
-            entropy_changed_word_in_old_grammar
+            entropy_changed_word_in_new_grammar - \
+            entropy_changed_word_in_old_grammar + \
+            lexicon_dl_delta_for_delete
 
         # print word
         # print dl_delta_for_delete
