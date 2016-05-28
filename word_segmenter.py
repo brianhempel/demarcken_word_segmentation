@@ -23,6 +23,9 @@ import re
 import string
 import sys
 
+# Pretend words in dictionary cost extra bits.
+EXTRA_WORD_COST_BITS = float(sys.argv[3])
+
 INF = float("inf")
 
 # Brown Corpus from http://www.sls.hawaii.edu/bley-vroman/brown_corpus.html
@@ -283,6 +286,7 @@ def description_length(g, utterances):
             if prob == 0:
                 continue
             dl += -log(prob) # Bits to represent this word
+    dl += len(g) * EXTRA_WORD_COST_BITS
     return dl
 
 def print_description_length(g, utterances):
@@ -404,7 +408,8 @@ for iteration_number in range(1,16):
             (old_total_soft_counts - old_counts_of_changed_old_words) * \
             log(new_total_soft_counts / old_total_soft_counts) - \
             changed_words_new_dl + \
-            changed_words_old_dl
+            changed_words_old_dl + \
+            EXTRA_WORD_COST_BITS
 
 
         # Prepare for deletion estimation
@@ -449,7 +454,8 @@ for iteration_number in range(1,16):
             (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word1_delete) * \
             log(total_counts_if_word1_deleted / total_soft_counts_after_pair_added) + \
             word1_deleted_changed_words_new_dl - \
-            word1_deleted_changed_words_old_dl
+            word1_deleted_changed_words_old_dl - \
+            EXTRA_WORD_COST_BITS
 
 
         # Est. if word2 deleted
@@ -484,7 +490,8 @@ for iteration_number in range(1,16):
             (total_soft_counts_after_pair_added - counts_after_pair_added_of_words_changed_on_word2_delete) * \
             log(total_counts_if_word2_deleted / total_soft_counts_after_pair_added) + \
             word2_deleted_changed_words_new_dl - \
-            word2_deleted_changed_words_old_dl
+            word2_deleted_changed_words_old_dl - \
+            EXTRA_WORD_COST_BITS
 
 
         if dl_delta + min(dl_delta_if_word1_deleted,0) + min(dl_delta_if_word2_deleted,0) < 0:
@@ -593,7 +600,8 @@ for iteration_number in range(1,16):
             (old_total_soft_counts - old_counts_of_changed_old_words) * \
             math.log(new_total_soft_counts / old_total_soft_counts, 2) + \
             entropy_changed_word_in_new_grammar -\
-            entropy_changed_word_in_old_grammar
+            entropy_changed_word_in_old_grammar -\
+            EXTRA_WORD_COST_BITS
 
         # print word
         # print dl_delta_for_delete
