@@ -1,7 +1,10 @@
 import sys
 import re
+
 origin_txt = sys.argv[1]
 segmented_txt = sys.argv[2]
+origin_lexicon_path = sys.argv[3]
+found_lexicon_path = sys.argv[4]
 
 with open(origin_txt,"r") as f:
     lines_origin = f.readlines()
@@ -10,6 +13,13 @@ f.close()
 with open(segmented_txt,"r") as f2:
     lines_segmented = f2.readlines()
 f2.close()
+
+with open(origin_lexicon_path,"r") as f3:
+    origin_lexicon = set(f3.read().split())
+
+with open(found_lexicon_path,"r") as f4:
+    found_lexicon = set(f4.read().split())
+
 
 def char_in_which_word(loc_from,loc_to,seg_word):
     if loc_from == 0:
@@ -41,7 +51,7 @@ def split_position(word_list):
     for i in range(len(word_list)):
         len_split += len(word_list[i])
         split_loc.append((len_split-1,len_split))
-    return split_loc  
+    return split_loc
 
 def word_based_analysis(str1,str2):
     word_in_origin = str1.split()
@@ -78,7 +88,7 @@ def split_based_analysis(str1,str2):
     return (correct_found_split,split_loc_origin,split_loc_segment)
 
 
-def bracket_miss_in_middle(split_origin,split_segment): 
+def bracket_miss_in_middle(split_origin,split_segment):
     correct_both_side = 0
     correct_left_side = 0
     correct_right_side = 0
@@ -134,12 +144,17 @@ if __name__ == '__main__':
         correct_left_side += b
         correct_right_side += c
         correct_neither_side += d
+    print "found_lexicon_word_count %d"   % len(found_lexicon)
+    print "true_lexicon_word_count %d"    % len(origin_lexicon)
+    print "found_lexicon_precision %.10f" % (len(found_lexicon & origin_lexicon) / float(len(found_lexicon)))
+    print "found_lexicon_recall %.10f"    % (len(found_lexicon & origin_lexicon) / float(len(origin_lexicon)))
+    # Which words on a line are correct (by position)
     print "word-based precision %.10f"%(correct_found_word/float(found_word))
-    print "word_based recall %.10f"%(correct_found_word/float(total_word_in_origin)) 
+    print "word_based recall %.10f"%(correct_found_word/float(total_word_in_origin))
     print "split-based precision %.10f"%(correct_found_split/float(found_split))
     print "split_based recall %.10f"%(correct_found_split/float(total_split_in_origin))
     print "total_split_in_origin %d"%(total_split_in_origin)
     print "correct_both_side %d"%(correct_both_side)
     print "correct_left_side %d"%(correct_left_side)
     print "correct_right_side %d"%(correct_right_side)
-    print "correct_neither_side %d"%(correct_neither_side)    
+    print "correct_neither_side %d"%(correct_neither_side)
