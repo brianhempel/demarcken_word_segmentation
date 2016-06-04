@@ -88,35 +88,130 @@ def split_based_analysis(str1,str2):
     return (correct_found_split,split_loc_origin,split_loc_segment)
 
 
+def miss_how_many_bracket(split_from,split_to,split_origin):
+    flag = False
+    tmp = 0
+    for entry in split_origin:
+        if entry == split_from:
+            flag = True
+        if entry[0] == split_to[0]:
+            break 
+        if(flag and entry != split_to and entry != split_from):
+            tmp += 1
+    return tmp 
+
+def miss_how_many_bracket_left_to_right(split_from,split_to,split_origin):
+    tmp = 0
+    for i in range(len(split_origin)):
+      if split_origin[i] == split_from:
+        while(split_origin[i][0] < split_to[0]):
+            i += 1
+            tmp += 1
+        if split_origin[i][0] > split_to[0]:
+            break 
+    return tmp    
+
+def miss_how_many_bracket_right_to_left(split_from,split_to,split_origin):
+    tmp = 0
+    for i in range(len(split_origin)):
+        if split_origin[i] == split_to:
+            while(split_origin[i][0] > split_from[0]):
+                i -= 1
+                tmp += 1
+            if split_origin[i][0] < split_from[0]:
+                break 
+    return tmp     
+
+def miss_how_many_bracket_wrong_word(split_from,split_to,split_origin):
+    begin = 0
+    end = 0
+    for i in range(len(split_origin)):
+        if i != len(split_origin)-1:
+            if split_origin[i][0] < split_from[0] and split_origin[i+1][0] > split_from[0]:
+                begin = i
+            if split_origin[i][0] < split_to[0] and split_origin[i+1][0] < split_to[0]:
+                end = i
+    return (end-begin)
+
 def bracket_miss_in_middle(split_origin,split_segment):
     correct_both_side = 0
+    correct_both_side_zero_miss = 0
+    correct_both_side_one_miss = 0
+    correct_both_side_two_miss = 0
+    correct_both_side_lots_miss = 0
     correct_left_side = 0
+    correct_left_side_zero_miss = 0
+    correct_left_side_one_miss = 0
+    correct_left_side_two_miss = 0
+    correct_left_side_lots_miss = 0
     correct_right_side = 0
+    correct_right_side_zero_miss = 0
+    correct_right_side_one_miss = 0
+    correct_right_side_two_miss = 0
+    correct_right_side_lots_miss = 0
     correct_neither_side = 0
+    correct_neither_side_zero_miss = 0
+    correct_neither_side_one_miss = 0
+    correct_neither_side_two_miss = 0
+    correct_neither_side_lots_miss = 0
+
     split_origin.append((0,0))
     split_segment.append((0,0))
     split_origin = sorted(split_origin)
     split_segment = sorted(split_segment)
     for i in range(len(split_segment)):
-        if i != 0 and i != len(split_segment)-1:
-            if split_segment[i] in split_origin:
-                tmp = split_origin.index(split_segment[i])
-                if split_segment[i-1] in split_origin and split_segment[i+1] in split_origin:
-                    tmp2 = split_origin.index(split_segment[i-1])
-                    tmp3 = split_origin.index(split_segment[i+1])
-                    if tmp2 == tmp-1 and tmp3 == tmp + 1:
-                        correct_both_side += 1
-                elif split_segment[i-1] not in split_origin and split_segment[i+1] not in split_origin:
-                    correct_neither_side += 1
-                elif split_segment[i-1] in split_origin:
-                    tmp2 = split_origin.index(split_segment[i-1])
-                    if tmp2 == tmp - 1:
-                        correct_left_side += 1
+        if i != len(split_segment)-1:
+            split_from = split_segment[i]
+            split_to = split_segment[i+1]
+            if split_from in split_origin and split_to in split_origin: #right and left side are both correct 
+                correct_both_side += 1
+                miss_bracket = miss_how_many_bracket(split_from,split_to,split_origin)
+                if miss_bracket == 0:
+                    correct_both_side_zero_miss += 1
+                elif miss_bracket == 1:
+                    correct_both_side_one_miss += 1
+                elif miss_bracket == 2:
+                    correct_both_side_two_miss += 1
                 else:
-                    tmp3 = split_origin.index(split_segment[i+1])
-                    if tmp3 == tmp + 1:
-                        correct_right_side += 1
-    return (correct_both_side,correct_left_side,correct_right_side,correct_neither_side)
+                    correct_both_side_lots_miss += 1
+
+            if split_from in split_origin and split_to not in split_origin: # left side is corret 
+                correct_left_side += 1
+                miss_bracket = miss_how_many_bracket_left_to_right(split_from,split_to,split_origin)
+                if miss_bracket == 0:
+                    correct_right_side_zero_miss += 1
+                elif miss_bracket == 1:
+                    correct_left_side_one_miss += 1
+                elif miss_bracket == 2:
+                    correct_left_side_two_miss += 1
+                else:
+                    correct_left_side_lots_miss += 1
+
+            if split_from not in split_origin and split_to in split_origin: # right side is corret 
+                correct_right_side += 1 
+                miss_bracket = miss_how_many_bracket_right_to_left(split_from,split_to,split_origin)
+                if miss_bracket == 0:
+                    correct_right_side_zero_miss += 1
+                elif miss_bracket == 1:
+                    correct_right_side_one_miss += 1
+                elif miss_bracket == 2:
+                    correct_right_side_two_miss += 1
+                else:
+                    correct_right_side_lots_miss += 1 
+
+            if split_from not in split_origin and split_to not in split_origin: # neither side is correct 
+                correct_neither_side += 1
+                miss_bracket = miss_how_many_bracket_wrong_word(split_from,split_to,split_origin)
+                if miss_bracket == 0:
+                    correct_neither_side_zero_miss +=1 
+                elif miss_bracket == 1:
+                    correct_neither_side_one_miss += 1
+                elif miss_bracket == 2:
+                    correct_neither_side_two_miss += 1
+                else:
+                    correct_neither_side_lots_miss += 1
+
+    return ((correct_both_side,correct_both_side_zero_miss,correct_both_side_one_miss,correct_both_side_two_miss,correct_both_side_lots_miss),(correct_left_side,correct_left_side_zero_miss,correct_left_side_one_miss,correct_left_side_two_miss,correct_right_side_lots_miss),(correct_right_side,correct_right_side_zero_miss,correct_right_side_one_miss,correct_right_side_two_miss,correct_right_side_lots_miss),(correct_neither_side,correct_neither_side_zero_miss,correct_neither_side_one_miss,correct_neither_side_two_miss,correct_neither_side_lots_miss))
 
 if __name__ == '__main__':
     lines_num = len(lines_origin)
@@ -126,10 +221,30 @@ if __name__ == '__main__':
     correct_found_split = 0
     found_split = 0
     total_split_in_origin = 0
+
     correct_both_side = 0
+    correct_both_side_zero_miss = 0
+    correct_both_side_one_miss = 0
+    correct_both_side_two_miss = 0
+    correct_both_side_lots_miss = 0
+
     correct_left_side = 0
+    correct_left_side_zero_miss = 0
+    correct_left_side_one_miss = 0
+    correct_left_side_two_miss = 0
+    correct_left_side_lots_miss = 0
+
     correct_right_side = 0
+    correct_right_side_zero_miss = 0
+    correct_right_side_one_miss = 0
+    correct_right_side_two_miss = 0
+    correct_right_side_lots_miss = 0
+
     correct_neither_side = 0
+    correct_neither_side_zero_miss = 0
+    correct_neither_side_one_miss = 0
+    correct_neither_side_two_miss = 0
+    correct_neither_side_lots_miss = 0
     for i in range(lines_num):
         x, y,z = word_based_analysis(lines_origin[i],lines_segmented[i])
         correct_found_word += x
@@ -140,10 +255,30 @@ if __name__ == '__main__':
         found_split += len(r)
         total_split_in_origin += len(q)
         a,b,c,d = bracket_miss_in_middle(q,r)
-        correct_both_side += a
-        correct_left_side += b
-        correct_right_side += c
-        correct_neither_side += d
+        correct_both_side += a[0]
+        correct_both_side_zero_miss += a[1]
+        correct_both_side_one_miss += a[2]
+        correct_both_side_two_miss += a[3]
+        correct_both_side_lots_miss += a[4]
+
+        correct_left_side += b[0]
+        correct_left_side_zero_miss += b[1]
+        correct_left_side_one_miss += b[2]
+        correct_left_side_two_miss += b[3]
+        correct_left_side_lots_miss += b[4]
+
+        correct_right_side += c[0]
+        correct_right_side_zero_miss += c[1]
+        correct_right_side_one_miss += c[2]
+        correct_right_side_two_miss += c[3]
+        correct_right_side_lots_miss += c[4]
+
+        correct_neither_side += d[0]
+        correct_neither_side_zero_miss += d[1]
+        correct_neither_side_one_miss += d[2]
+        correct_neither_side_two_miss += d[3]
+        correct_neither_side_lots_miss += d[4]
+
     print "found_lexicon_word_count %d"   % len(found_lexicon)
     print "true_lexicon_word_count %d"    % len(origin_lexicon)
     print "found_lexicon_precision %.10f" % (len(found_lexicon & origin_lexicon) / float(len(found_lexicon)))
@@ -154,7 +289,27 @@ if __name__ == '__main__':
     print "split-based precision %.10f"%(correct_found_split/float(found_split))
     print "split_based recall %.10f"%(correct_found_split/float(total_split_in_origin))
     print "total_split_in_origin %d"%(total_split_in_origin)
+
     print "correct_both_side %d"%(correct_both_side)
+    print "correct_both_side_zero_miss %d"%(correct_both_side_zero_miss)
+    print "correct_both_side_one_miss %d"%(correct_both_side_one_miss)
+    print "correct_both_side_two_miss %d"%(correct_both_side_two_miss)
+    print "correct_both_side_lots_miss>=3 %d"%(correct_both_side_lots_miss)
+    
     print "correct_left_side %d"%(correct_left_side)
+    print "correct_left_side_zero_miss %d"%(correct_left_side_zero_miss)
+    print "correct_left_side_one_miss %d"%(correct_left_side_one_miss)
+    print "correct_left_side_two_miss %d"%(correct_left_side_two_miss)
+    print "correct_left_side_lots_miss>=3 %d"%(correct_left_side_lots_miss)
+
     print "correct_right_side %d"%(correct_right_side)
+    print "correct_right_side_zero_miss %d"%(correct_right_side_zero_miss)
+    print "correct_right_side_one_miss %d"%(correct_right_side_one_miss)
+    print "correct_right_side_two_miss %d"%(correct_right_side_two_miss)
+    print "correct_right_side_lots_miss>=3 %d"%(correct_right_side_lots_miss)
+
     print "correct_neither_side %d"%(correct_neither_side)
+    print "correct_neither_side_zero_miss %d"%(correct_neither_side_zero_miss)
+    print "correct_neither_side_one_miss %d"%(correct_neither_side_one_miss)
+    print "correct_neither_side_two_miss %d"%(correct_neither_side_two_miss)
+    print "correct_neither_side_lots_miss>=3 %d"%(correct_neither_side_lots_miss)
