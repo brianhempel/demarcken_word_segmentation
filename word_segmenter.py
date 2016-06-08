@@ -36,6 +36,7 @@ INF = float("inf")
 # read in the file
 FILEPATH = sys.argv[1]
 OUTBASENAME = sys.argv[2]
+MIN_PAIR_OCCURRENCE = int(sys.argv[3] or "2")
 
 raw_sentences = open(FILEPATH).readlines()
 
@@ -322,7 +323,7 @@ for iteration_number in range(1,16):
 
     candidate_pairs = []
     for pair, pairs in itertools.groupby(sorted(Viterbi_pair_array)):
-        if len(list(pairs)) >= 4:
+        if len(list(pairs)) >= MIN_PAIR_OCCURRENCE:
             candidate_pairs.append(pair)
 
     pair_soft_counts = {}
