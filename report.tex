@@ -110,12 +110,15 @@
   \includegraphics{./figure/lexicon_size.pdf}
   \end{figure}
 
-  \begin{figure}[h]
-  \includegraphics{./figure/bit_of_char_per_iteration.pdf}
-  \end{figure}
+  De Marcken reports 2.33 bits per character, however our result is 2.23 bits per character. As shown below, after 15 iterations, our algorithm comes to converges. From this perspective, it shows somehow our implementation is correct. But we also notice our range of turblulence is bigger than De Marcken's after 15 iterations.
 
   \begin{figure}[h]
   \includegraphics{./figure/entropy_per_iteration.pdf}
+  \end{figure}
+
+  Also ,we plot the relation between bits per character and iterations. The more iterations it runs, the smaller the bits per charachter.Similarly, after 15 iterators, the bits per character goes down smoothly. It indicates our algorithm converges. 
+  \begin{figure}[h]
+  \includegraphics{./figure/bit_of_char_per_iteration.pdf}
   \end{figure}
 
   During our baseline running, 60\% of found word are exactly correct, 40\% are incorrect. We investigate these incorrect found words deep, and try to categorize what kind error types they belong to. As you can see below, about 43\% of those words combines two true word together as one segmented word, 18\% is our tool find this word but doesn't split it at correct ending character, the error about finding this word but not splitting it at correct starting character also takes almost 18\%. 8.7\% is caused by combining three real words together as one word, while 1.6\% comes from quad+ words combination. We also notice that 6.2\% is for a true word, our tool splits it into several fragements. Sometimes, our tool would find a word, but adding suffix and prefix from its neighbor words, taking 3.3\%.
@@ -130,6 +133,10 @@
 
   \begin{figure}[h]
   \includegraphics{./figure/finding_corpus_word.pdf}
+  \end{figure}
+
+  \begin{figure}[h]
+  \includegraphics{./figure/finding_lexicon_word.pdf}
   \end{figure}
 
   \section*{Discussion}
