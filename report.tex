@@ -6,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{hyperref}
 
 \pagestyle{empty}	% No page number in the footer.
 \begin{document}
@@ -39,6 +40,8 @@
 
   On the input corpus, we downcase the input and delete all non-alphanumeric characters, including whitespace. In order to speed up processing, we use PyPy instead of CPython. With PyPy and several internal optimizations, a full run on the entire Brown Corpus takes roughly five hours.
   
+  Our implementation is available at \href{https://github.com/brianhempel/demarcken_word_segmentation}{https://github.com/brianhempel/demarcken\_word\_segmentation}.
+  
   Our tool produces several output files:
 
   \begin{itemize}
@@ -53,7 +56,7 @@
 
   \subsection{Evaluation Criteria}
 
-	In the algorithm, lexicon entries are a hierarchy of other lexicon entries. To judge performance, de Marcken compared these hierarchies with the true segmentation. De Marcken's recall rate is the proportion of the words in the true segmentation that also appear at some level of the algorithm's hierarchical parse of the input. The crossing-brackets rate (analogous to precision) measures a concept called crossing-bracket violations. A word in the true segmentation is considered a crossing bracket violation if a word in any level of the found hierarchical representation starts/ends in the true word but also crosses over into a neighboring word.
+	In the algorithm, lexicon entries are a hierarchy of other lexicon entries. To judge performance, de Marcken compared these hierarchies with the true segmentation. De Marcken's recall rate is the proportion of the words in the true segmentation that also appear at some level of the algorithm's hierarchical parse of the input. The crossing-brackets rate (somewhat analogous to precision) measures a concept called crossing-bracket violations. A word in the true segmentation is considered a crossing bracket violation if a word in any level of the found hierarchical representation starts/ends in the true word but also crosses over into a neighboring word.
     
     With these metrics, de Marcken claims a recall of 90.5\% and a crossing-brackets rate of 1.7\%, which makes his work sound highly performant.
 
@@ -97,49 +100,41 @@
  
    \section{Results}
    
-   De Marcken reports a final lexicon size of 26,026 words and a description length equivalent to 2.33 bits per character. We produce a lexicon of 26,171 words at 2.23 bits per character.
+   De Marcken reports a final lexicon size of 26,026 words and a description length equivalent to 2.33 bits per character. We produce a lexicon of 26,171 words at 2.23 bits per character. Our higher measured compression rate is probably due to minor discrepancies between our implementation and his. Part of de Marcken's thesis discusses a Huffman coding scheme. His paper is unclear, but he may be assuming such a scheme for his compression calculation. We presume an arithmetic coding scheme, which is more efficient.
    
-   \subsection{Kinds of Errors}
+   As shown below, after about 15 iterations, our algorithm converges.
 
-  what do we consider a word
-  graphs/tables
- 
-  \begin{figure}[h]
-  \includegraphics{./figure/lexicon_size.pdf}
-  \end{figure}
+  \includegraphics[scale=0.9]{./figure/lexicon_size_per_iteration}
 
-  De Marcken reports 2.33 bits per character, however our result is 2.23 bits per character. As shown below, after 15 iterations, our algorithm comes to converges. From this perspective, it shows somehow our implementation is correct. But we also notice our range of turblulence is bigger than De Marcken's after 15 iterations.
+  Also we plot the relationship between bits per character and iterations. Bits per character decrease iteration by iteration until convergence at about the same time the lexicon stops increasing in size.
 
-  \begin{figure}[h]
-  \includegraphics{./figure/entropy_per_iteration.pdf}
-  \end{figure}
-
-  Also ,we plot the relation between bits per character and iterations. The more iterations it runs, the smaller the bits per charachter.Similarly, after 15 iterators, the bits per character goes down smoothly. It indicates our algorithm converges. 
-  \begin{figure}[h]
   \includegraphics{./figure/bit_of_char_per_iteration.pdf}
-  \end{figure}
 
-  During our baseline running, 60\% of found word are exactly correct, 40\% are incorrect. We investigate these incorrect found words deep, and try to categorize what kind error types they belong to. As you can see below, about 43\% of those words combines two true word together as one segmented word, 18\% is our tool find this word but doesn't split it at correct ending character, the error about finding this word but not splitting it at correct starting character also takes almost 18\%. 8.7\% is caused by combining three real words together as one word, while 1.6\% comes from quad+ words combination. We also notice that 6.2\% is for a true word, our tool splits it into several fragements. Sometimes, our tool would find a word, but adding suffix and prefix from its neighbor words, taking 3.3\%.
+  \subsection{Kinds of Errors}
 
-  \begin{figure}[h]
+	Of the words in the found segmentation of the corpus, 60\% of the found word locations are exactly correct and 40\% are incorrect in some way. We investigate these incorrect found words and try to categorize what kind of error is being made in each case. As you can see below, about 43\% of these incorrect found words combine two true words together as one found word. 18\% of the found words are a suffix of the of correct word at that location; similarly, 18\% are a prefix of the correct word at the location. 8.7\% of the found words are actually three real words combined together as one word, while 1.6\% comes from the combination of four of more words. We also notice that 6.2\% of the found words are actually a small fragment from the middle of the true word. 3.3\% of the time our tool will find a true word but combine it with a suffix or prefix of its neighbor. The remaining 1.2\% of incorrectly found words come from various other errors, such as the fusion of two words plus a neighboring prefix, or a suffix-prefix fusion across a word boundary.
+
   \includegraphics[scale=0.6]{./figure/error_nature_classfier.pdf}
-  \end{figure}
+
+  \subsection{Different Measures of Precision/Recall}
+
+	How do these compare to de Marcken's 90.5\% recall?
   
-  \begin{figure}[h]
+  Precision/recall of set of corpus word break locations
+
+  Precision/recall of found word locations in corpus (more brutal because you have to get the break on both sides correct and not have a break in the middle)
+  
+  Precision/recall of set of words in lexicon (Note that true lexicon has only 26775 words that occur more than once in the corpus; multiply recall by 44195/26775 to consider only these.)
+
+  \subsection{Experiments}
+
   \includegraphics{./figure/finding_corpus_split_location.pdf}
-  \end{figure}
 
-  \begin{figure}[h]
   \includegraphics{./figure/finding_corpus_word.pdf}
-  \end{figure}
 
-  \begin{figure}[h]
   \includegraphics{./figure/finding_lexiocn_words.pdf}
-  \end{figure}
 
-  \section{Discussion}
-
-  what do the results mean
+  \includegraphics{./figure/lexicon_size.pdf}
 
   \section{Ideas for Improvement}
 
