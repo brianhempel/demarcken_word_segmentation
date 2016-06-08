@@ -100,6 +100,8 @@
   \includegraphics{./figure/entropy_per_iteration.pdf}
   \end{figure}
 
+  During our baseline running, 60\% of found word are exactly correct, 40\% are incorrect. We investigate these incorrect found words deep, and try to categorize what kind error types they belong to. As you can see below, about 43\% of those words combines two true word together as one segmented word, 18\% is our tool find this word but doesn't split it at correct ending character, the error about finding this word but not splitting it at correct starting character also takes almost 18\%. 8.7\% is caused by combining three real words together as one word, while 1.6\% comes from quad+ words combination. We also notice that 6.2\% is for a true word, our tool splits it into several fragements. Sometimes, our tool would find a word, but adding suffix and prefix from its neighbor words, taking 3.3\%.
+
   \begin{figure}[h]
   \includegraphics[scale=0.6]{./figure/error_nature_classfier.pdf}
   \end{figure}
