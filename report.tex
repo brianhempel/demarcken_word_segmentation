@@ -53,17 +53,19 @@
 
   \subsection*{Evaluation Criteria}
 
-	How de Marcken measures precision/recall. Why it's silly.
+	Lexicon entries are a hierarchy of other lexicon entries. To judge performance, de Marcken compared these hierarchies with the true segmentation. De Marcken's recall rate is the proportion of the words in the true segmentation that also appear at some level of the algorithm's hierarchical representation of the input. The crossing-brackets rate (analogous to precision) measures a concept called crossing-bracket violations. A word in the true segmentation is considered a crossing bracket violation if a word in any level of the found hierarchical representation starts/ends in the true word but also crosses over into a neighboring word.
     
-    Since the lexicon is represented as a hierarchy using brackets, to judge the performance, he used these hierarchies to compare with true segmentation. The recall rate is the proportion of the subsequences bracketed in the true segmentation that are also bracketed at some level of the algorithms hierarchical representation of the input.The crossing-brackets rate(similar as precision rate) is the proportion of the subsequences bracketed in the true segmentation that are crossed by some bracketed subsequence in the algorithms hierarchical representation. 
-    
-    He claimed a combination of high recall rate and low crossingbrackets rate is the ideal situation. 
+    With these metrics, de Marcken claims a recall of 90.5\% and a crossing-brackets rate of 1.7\%, which makes his work sound highly performant.
 
-	The problem here is even to use hierarchy, we don't know which hierarchy is correct. What he did now is to consider all hierarchies, that's not accurate. Ideally, we need consider the top hierarchy, and compare it with true segmentation.  
+	The problem is that we don't know which level in the hierarchy has the correct word. Instead, we need consider only the top level of hierarchy as the true word for segmentation.
 
-    We do two things, fisrt we measure precision/recall rate both on word-based segmentation and bracket-based segmentation. Secondly, we focus on the top hierarchy, compare with the true segmentation to make sure whether the segmented word is too short or too long. For example, for each found word with both right and left sides on correct brackets, we count how many of these words should have zero brackets in the middle(the word is exactly correct), how many of those should have one,two, more than two brackets(the word is too long). We also did the counting for found word with only left or right side on correct brackets, as well as neither sides on correct brackets.
-
-    All we did can make the evaluation more concrete and accurate. 
+	We evaluate the performance of the algorithm and our experiments below by measuring the precision and recall against the true segmentation for three different comparisons.
+	
+	\begin{enumerate}
+		\item We compare the set of word break locations found in the corpus to the the true word break locations.
+		\item We compare the words in the corpus found segmentation to the true words at each location.
+		\item We compare the set of words in the found lexicon to the set of words in the true lexicon.
+	\end{enumerate}
 
   \subsection*{Experiments}
   
@@ -96,6 +98,8 @@
 	The baseline algorithm will only consider a word pair as a candidate to be added to the lexicon if the word pair occurs at least twice. We tested raising this requirement to 3, 4, or 5 minimum occurrences before consideration.
  
    \section*{Results}
+   
+   De Marcken reports a final lexicon size of 26,026 words and a description length equivalent to 2.33 bits per character. We produce a lexicon of 26,171 words at 2.23 bits per character.
    
    \subsection*{Kinds of Errors}
 
