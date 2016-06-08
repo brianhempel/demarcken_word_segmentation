@@ -17,11 +17,11 @@
 
   \vspace{1em}
 
-  \section*{Introduction}
+  \section{Introduction}
 
   Carl de Marcken, in his PhD thesis ``Unsupervised Language Acquisition'', attempted to learn words given a large corpus of sentences devoid of all spaces and punctuation, similar to how children learn words from no prior information. In his thesis, de Markcen models learning by searching for a grammar that minimizes the combined description length of the input and the grammar together. Both sentences and words in the grammar are represented by composing smaller words. His method iteratively adds and deletes new grammar entries based on the goal. The hope is that patterns in the final grammar reflect the underlying mechanisms and parameters of the language that generated the input.
   
-  \section*{What We Did}
+  \section{What We Did}
 
   We focus on re-implementing the learning algorithm of Carl de Marcken's PhD thesis. The general idea is to start with the simplest grammar, then iteratively refine the entries of the grammar to reduce the description length until convergence. 
   
@@ -33,7 +33,7 @@
   
   We run the algorithm for 15 iterations. De Marcken discussed convergence criteria in his thesis, but chose to simply run his algorithm for 15 iterations for simplicity and to avoid the algorithm entering a loop where the same words are added and deleted repeatedly on successive iterations due to inaccuracy in the estimates used to determine when a word is added and deleted.
   
-  \subsection*{Implementation Notes}
+  \subsection{Implementation Notes}
   
   For the forward-backward stochastic optimization step, we calculate probabilities using log probabilities to avoid floating point underflow.
 
@@ -51,57 +51,55 @@
 
 	We consider hyphens and whitespace as true word separators in the original corpus. A glance at the Brown corpus suggested to us that most hyphenated utterances should be considered multiple words.
 
-  \subsection*{Evaluation Criteria}
+  \subsection{Evaluation Criteria}
 
-	Lexicon entries are a hierarchy of other lexicon entries. To judge performance, de Marcken compared these hierarchies with the true segmentation. De Marcken's recall rate is the proportion of the words in the true segmentation that also appear at some level of the algorithm's hierarchical representation of the input. The crossing-brackets rate (analogous to precision) measures a concept called crossing-bracket violations. A word in the true segmentation is considered a crossing bracket violation if a word in any level of the found hierarchical representation starts/ends in the true word but also crosses over into a neighboring word.
+	In the algorithm, lexicon entries are a hierarchy of other lexicon entries. To judge performance, de Marcken compared these hierarchies with the true segmentation. De Marcken's recall rate is the proportion of the words in the true segmentation that also appear at some level of the algorithm's hierarchical parse of the input. The crossing-brackets rate (analogous to precision) measures a concept called crossing-bracket violations. A word in the true segmentation is considered a crossing bracket violation if a word in any level of the found hierarchical representation starts/ends in the true word but also crosses over into a neighboring word.
     
     With these metrics, de Marcken claims a recall of 90.5\% and a crossing-brackets rate of 1.7\%, which makes his work sound highly performant.
 
-	The problem is that we don't know which level in the hierarchy has the correct word. Instead, we need consider only the top level of hierarchy as the true word for segmentation.
+	The problem is that we don't know which level in the hierarchy has the correct word. Instead, we consider only the top level of hierarchy as the found word for segmentation.
 
-	We evaluate the performance of the algorithm and our experiments below by measuring the precision and recall against the true segmentation for three different comparisons.
+	We evaluate the performance of the algorithm and our experiments below by measuring the precision and recall for three different comparisons against the true segmentation:
 	
 	\begin{enumerate}
 		\item We compare the set of word break locations found in the corpus to the the true word break locations.
-		\item We compare the words in the corpus found segmentation to the true words at each location.
+		\item We compare the words in the found segmentation to the true words at each corpus location.
 		\item We compare the set of words in the found lexicon to the set of words in the true lexicon.
 	\end{enumerate}
 
-  \subsection*{Experiments}
+  \section*{Experiments}
   
-  All tests were performed on the Brown Corpus, which contains 44,195 unique words across 14,342 sentences. 
-  
-  We made several kinds of modifications to the baseline algorithm to see how they change segmentation performance.
+  We made several kinds of modifications to the baseline algorithm to see how they change segmentation performance. All tests were performed on the Brown Corpus, which contains 44,195 unique words across 14,342 sentences.
 
-  \subsection*{Flat Words in Lexicon}
+  \subsection{Flat Words in Lexicon}
   
   De Marcken uses a nested representation for all words in the lexicon; that is, words are composed of other words. We tend not to think of words as being made up of smaller words, so what if we instead require all words in the lexicon to be represented by sequences of single characters?
 
-  \subsection*{Flat Words in Lexicon, Separate Lexicon Probability Model}
+  \subsection{Flat Words in Lexicon, Separate Lexicon Probability Model}
 
 	De Marcken's baseline algorithm uses the same probability model for words in the lexicon and words in the sentences. This method breaks down pretty heavily in the naive ``Flat Words in Lexicon'' model above. Single characters are overrepresented for parsing the corpus, and words are overrepresented for parsing the lexicon.
 	
-	Instead, in this experiment we keep a character probability model only for representing the words in our lexicon. The word probabilities for the corpus are kept separately.
+	Instead, in this experiment we keep a character probability model specifically for representing the words in our lexicon. The word probabilities for the corpus are kept separately.
 
-  \subsection*{Flat Words in Lexicon, O(1) Lexicon Probability Model}
+  \subsection{Flat Words in Lexicon, O(1) Lexicon Probability Model}
 
-	Life experience suggests to us that real words have structure. The zero-order probability model of the previous experiment cannot capture structure. In this experiment we use a first order probability model for representing the words in our lexicon: the probability for . Character pairs uncommon to words are penalized.
+	Life experience suggests to us that real words have structure. The zero-order probability model of the previous experiment cannot capture structure. In this experiment we use a first order probability model for representing the words in our lexicon: the probability for each character is conditioned based on the prior character. Thus, character pairs uncommon to words are penalized.
 	
-	An implementation detail: When character pairs probabilities are recalculated, we can't let any probability be 0; otherwise we won't be able to use that character. To avoid this, when counting characters instead of counting from 0 each character count is instead initialized to the 0-order probability of the character (a number between 0 and 1) and counts are added on top of that.
+	\textit{An implementation detail:} When character pairs probabilities are recalculated, we can't let any probability be 0; otherwise we won't be able to use that character. To avoid this, when counting characters instead of counting from 0 each character count is instead initialized to the 0-order probability of the character (a number between 0 and 1) and counts are added on top of that.
 
-	\subsection*{Variations in Lexicon Entry Cost}
+	\subsection{Variations in Lexicon Entry Cost}
 	
 	We variously bias the algorithm against word creation by assigning an extra storage cost to words. We tested the algorithm where entries in the lexicon are considered to cost -8/+1/+2/+4/+16/+32/+64 extra bits.
 
-	\subsection*{Variations in Minimum Occurrences Required to be a Word}
+	\subsection{Variations in Minimum Occurrences Required to be a Word}
 	
 	The baseline algorithm will only consider a word pair as a candidate to be added to the lexicon if the word pair occurs at least twice. We tested raising this requirement to 3, 4, or 5 minimum occurrences before consideration.
  
-   \section*{Results}
+   \section{Results}
    
    De Marcken reports a final lexicon size of 26,026 words and a description length equivalent to 2.33 bits per character. We produce a lexicon of 26,171 words at 2.23 bits per character.
    
-   \subsection*{Kinds of Errors}
+   \subsection{Kinds of Errors}
 
   what do we consider a word
   graphs/tables
@@ -139,11 +137,11 @@
   \includegraphics{./figure/finding_lexicon_word.pdf}
   \end{figure}
 
-  \section*{Discussion}
+  \section{Discussion}
 
   what do the results mean
 
-  \section*{Ideas for Improvement}
+  \section{Ideas for Improvement}
 
   ideas for improvement
 
