@@ -17,37 +17,48 @@
 
   \vspace{1em}
 
-  \section*{Intro}
+  \section*{Introduction}
 
-  Give a coding scheme and a particular lexion, theoretically, it's possible to calculate the minimum length encoding of this given input. Part of the encoding will be devoted to the lexicon, the rest to representing the input in terms of the lexicon. The minimum description length (MDL) priciple was introduced by Jorma Rissanen, which tries to describe data using fewer symbols than needed to describe the data literally given a set of training data. As applied in linguistic filed, one can hope that pattern in the lexiocn reflect the underlying mechanisms and parameters of the language that generated the input. 
-  
-  Carl de Marcken, in his PhD thesis, Unsupervised Language Acquisition, simulated children's learning processing of natural language, which maps from complex physical signals to grammar that enable them to generate and interpret new utterances. Mainly, it argues how word/grammar are built by perturbing a composition of existing parameters via statistical and linguistical methodology. Learning are expressed at the computational level is the search for the grammar that minimizes the combined description length of th input and the grammar. In his thesis,both utterances and parameters in the grammar are represented by composing parameters, and he tries to add/delete new grammar based on minimizing description length of lexicon.
+  Carl de Marcken, in his PhD thesis ``Unsupervised Language Acquisition'', attempted to learn words given a large corpus of sentences devoid of all spaces and punctuation, similar to how children learn words from no prior information. In his thesis, de Markcen models learning by searching for a grammar that minimizes the combined description length of the input and the grammar together. Both sentences and words in the grammar are represented by composing smaller words. His method iteratively adds and deletes new grammar entries based on the goal. The hope is that patterns in the final grammar reflect the underlying mechanisms and parameters of the language that generated the input.
   
   \section*{What We Did}
 
-  our implementation
-
-  We focus on re-implementing learning algorithm of Carl de Marcken's Phd thesis. The general idea is to start with simplest lexicon, for every iteration, it refines the parameters of the lexicon to reduce the description length until converage. 
+  We focus on re-implementing the learning algorithm of Carl de Marcken's PhD thesis. The general idea is to start with the simplest grammar, then iteratively refine the entries of the grammar to reduce the description length until convergence. 
   
-  The learning process is separated into a stage where stochastic properties are optimized assuming a fixed linguistic structure in the lexicon. The expectation-maximization algorithm can be used to arrive a locally optimal set of probabilities and codelengths for the word in the lexicon. For composition by concatenation, it uses Baum-Welch procedure.
+  In the first part of each iteration, stochastic properties are optimized assuming a fixed linguistic structure in the grammar. The expectation-maximization algorithm is used to approach a locally optimal set of probabilities for the word in the lexicon.
  
-  Every iteration has two parts, adding and deleting lexicon. For adding lexicon, assumingly deleting this word/grammar, we look at pairs of words that are composed in the parses of words and the input. So long as the composition operation is associative, a new word can be created from such a pair and substitued in place of it wherever it appears. Hence we calculate the description length difference, if it reaches the condition, then adding it. Similar estimation can be used for deleting word/grammar. We also use n-gram model to speed up searching and learning process.  
+  After optimizing the stochastic properties, the algorithm adds words to the grammar. Candidate words are composed of pairs of existing words that occur together at least twice in the soft counts calculated over the lexicon and the corpus. An estimation is made of the change in description length presuming the word is added and its parts possibly deleted. If the description length will decrease, the pair is added as a new word in the grammar.
+
+  After another round of stochastic optimization, a similar estimation is used to delete words from the grammar. 
   
-  how it runs
+  \subsection*{Implementation Notes}
+  
+  We run the algorithm for 15 iterations. De Marcken discussed convergence criteria in his thesis, but chose to simply run his algorithm for 15 iterations for simplicity and to avoid the algorithm entering a loop where the same words are added and deleted repeatedly on successive iterations due to inaccuracy in the estimates used to determine when a word is added and deleted.
+  
+  For the forward-backward stochastic optimization step, we calculate probabilities using log probabilities to avoid floating point underflow.
 
-  Our data is from Brown Corpus, which contains 44195 vocabularies. We do some pre-processing. We make every sentence one line as well as deleting all whitespaces. Our tool would run 15 rounds iterations, because accoring to Carl de Marchen's theory, it almostly gets local optimization at this point. In order to speed up processing, we use pypy instead of origin python. Our tool would read input corpus, and generate the newly grammar, segmented sentence as well discoved lexicon. 
-
-  choices we made
+  Our data is from Brown Corpus, which contains 44195 vocabularies. We downcase the input and delete all non-alphanumeric characters, including whitespace. In order to speed up processing, we use PyPy instead of CPython. With PyPy and several internal optimizations, a full run on the entire Brown Corpus takes roughly five hours.
+  
+  Our tool produces several output files:
 
   \begin{itemize}
-    \item our grammar is composed of probability and Vertib representation
-    \item we use n-gram model as well as pypy. 
-    \item most calculations are based on log so that we can handle really low probability calculations. 
-    \item Brown corpus is converted to lower case, so that the learning algorithm does not introduce additional parameters to model capitalized words at the start of sentences.
+    \item The found lexicon, as flat words (one word per line, most common word first).
+    \item The true lexicon, as flat words (one word per line, most common word first).
+    \item The found segmentation of the corpus, as flat words.
+    \item The found segmentation of the corpus, with words given by their full nested representation.
+    \item The true segmentation of the corpus, as flat words. 
   \end{itemize}
 
-  experiments
+	We consider hyphens and whitespace as true word separators in the original corpus. A glance at the Brown corpus suggested to us that most hyphenated utterances should be considered multiple words.
 
+  \subsection*{Evaluation Criteria}
+
+	How de Marcken measures precision/recall. Why it's silly.
+
+	Different measures of precision recall we tested
+
+  \subsection*{Experiments}
+  
   Firstly, we measure the model performance via cross-entropy rate as well as the number of words in lexicon. 
   \begin{itemize}
     \item Baseline control(no changes)
@@ -63,6 +74,8 @@
     Thirdly, Single-use words are common in practice, but if the algorithm is too eager to add single-use words to the dictionary it could get really polluted.Hence we also change our tool to require a word to occur 2,3,4 times before adding it to the dictionary, then check the precision rate as well as recall reate. 
  
    \section*{Results}
+   
+   \subsection*{Kinds of Errors}
 
   what do we consider a word
   graphs/tables
