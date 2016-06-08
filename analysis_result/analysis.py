@@ -179,7 +179,7 @@ def bracket_miss_in_middle(split_origin,split_segment):
                 correct_left_side += 1
                 miss_bracket = miss_how_many_bracket_left_to_right(split_from,split_to,split_origin)
                 if miss_bracket == 0:
-                    correct_right_side_zero_miss += 1
+                    correct_left_side_zero_miss += 1
                 elif miss_bracket == 1:
                     correct_left_side_one_miss += 1
                 elif miss_bracket == 2:
@@ -211,7 +211,7 @@ def bracket_miss_in_middle(split_origin,split_segment):
                 else:
                     correct_neither_side_lots_miss += 1
 
-    return ((correct_both_side,correct_both_side_zero_miss,correct_both_side_one_miss,correct_both_side_two_miss,correct_both_side_lots_miss),(correct_left_side,correct_left_side_zero_miss,correct_left_side_one_miss,correct_left_side_two_miss,correct_right_side_lots_miss),(correct_right_side,correct_right_side_zero_miss,correct_right_side_one_miss,correct_right_side_two_miss,correct_right_side_lots_miss),(correct_neither_side,correct_neither_side_zero_miss,correct_neither_side_one_miss,correct_neither_side_two_miss,correct_neither_side_lots_miss))
+    return ((correct_both_side,correct_both_side_zero_miss,correct_both_side_one_miss,correct_both_side_two_miss,correct_both_side_lots_miss),(correct_left_side,correct_left_side_zero_miss,correct_left_side_one_miss,correct_left_side_two_miss,correct_left_side_lots_miss),(correct_right_side,correct_right_side_zero_miss,correct_right_side_one_miss,correct_right_side_two_miss,correct_right_side_lots_miss),(correct_neither_side,correct_neither_side_zero_miss,correct_neither_side_one_miss,correct_neither_side_two_miss,correct_neither_side_lots_miss))
 
 if __name__ == '__main__':
     lines_num = len(lines_origin)
