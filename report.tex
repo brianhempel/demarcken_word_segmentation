@@ -31,13 +31,13 @@
 
   After another round of stochastic optimization, a similar estimation is used to delete words from the grammar. 
   
-  \subsection*{Implementation Notes}
-  
   We run the algorithm for 15 iterations. De Marcken discussed convergence criteria in his thesis, but chose to simply run his algorithm for 15 iterations for simplicity and to avoid the algorithm entering a loop where the same words are added and deleted repeatedly on successive iterations due to inaccuracy in the estimates used to determine when a word is added and deleted.
+  
+  \subsection*{Implementation Notes}
   
   For the forward-backward stochastic optimization step, we calculate probabilities using log probabilities to avoid floating point underflow.
 
-  Our data is from Brown Corpus, which contains 44195 vocabularies. We downcase the input and delete all non-alphanumeric characters, including whitespace. In order to speed up processing, we use PyPy instead of CPython. With PyPy and several internal optimizations, a full run on the entire Brown Corpus takes roughly five hours.
+  On the input corpus, we downcase the input and delete all non-alphanumeric characters, including whitespace. In order to speed up processing, we use PyPy instead of CPython. With PyPy and several internal optimizations, a full run on the entire Brown Corpus takes roughly five hours.
   
   Our tool produces several output files:
 
@@ -67,19 +67,33 @@
 
   \subsection*{Experiments}
   
-  Firstly, we measure the model performance via cross-entropy rate as well as the number of words in lexicon. 
-  \begin{itemize}
-    \item Baseline control(no changes)
-    \item Words represented flat in lexicon(words represented using only terminals)
-    \item Words represented flat in lexicon, but with a separate probability model for the letters in a lexicon word
-    \item Words represented flat in lexicon, but with O(1) probability model for the letters in a lexicon word
-    \item Original algorithm, but the cost of a grammar entry artifically changed by -8,+1,+2,+4,+8,+16,+32,+64 bits
-   \end{itemize}
+  All tests were performed on the Brown Corpus, which contains 44,195 unique words across 14,342 sentences. 
+  
+  We made several kinds of modifications to the baseline algorithm to see how they change segmentation performance.
 
-    Secondly, we measure the precision rate and recall rate, not only bracket-based, also word-based. 
-    For more information, we also conduct some experiences about whether the segmented word is too short or too long.Specifically, for each found word with both right and left sides on correct breaks, how many of those words should also have a break in their middle? More specifically, how many should have zero breaks in the middle (the word was found exactly correct)? How many should have one break in the middle but it was missed? How many should have 2 breaks? How many should have 3+ breaks? Similarly, for each word with only right side on correct break, left side on correct break, neither sides on correct breaks. 
-   
-    Thirdly, Single-use words are common in practice, but if the algorithm is too eager to add single-use words to the dictionary it could get really polluted.Hence we also change our tool to require a word to occur 2,3,4 times before adding it to the dictionary, then check the precision rate as well as recall reate. 
+  \subsection*{Flat Words in Lexicon}
+  
+  De Marcken uses a nested representation for all words in the lexicon; that is, words are composed of other words. We tend not to think of words as being made up of smaller words, so what if we instead require all words in the lexicon to be represented by sequences of single characters?
+
+  \subsection*{Flat Words in Lexicon, Separate Lexicon Probability Model}
+
+	De Marcken's baseline algorithm uses the same probability model for words in the lexicon and words in the sentences. This method breaks down pretty heavily in the naive ``Flat Words in Lexicon'' model above. Single characters are overrepresented for parsing the corpus, and words are overrepresented for parsing the lexicon.
+	
+	Instead, in this experiment we keep a character probability model only for representing the words in our lexicon. The word probabilities for the corpus are kept separately.
+
+  \subsection*{Flat Words in Lexicon, O(1) Lexicon Probability Model}
+
+	Life experience suggests to us that real words have structure. The zero-order probability model of the previous experiment cannot capture structure. In this experiment we use a first order probability model for representing the words in our lexicon: the probability for . Character pairs uncommon to words are penalized.
+	
+	An implementation detail: When character pairs probabilities are recalculated, we can't let any probability be 0; otherwise we won't be able to use that character. To avoid this, when counting characters instead of counting from 0 each character count is instead initialized to the 0-order probability of the character (a number between 0 and 1) and counts are added on top of that.
+
+	\subsection*{Variations in Lexicon Entry Cost}
+	
+	We variously bias the algorithm against word creation by assigning an extra storage cost to words. We tested the algorithm where entries in the lexicon are considered to cost -8/+1/+2/+4/+16/+32/+64 extra bits.
+
+	\subsection*{Variations in Minimum Occurrences Required to be a Word}
+	
+	The baseline algorithm will only consider a word pair as a candidate to be added to the lexicon if the word pair occurs at least twice. We tested raising this requirement to 3, 4, or 5 minimum occurrences before consideration.
  
    \section*{Results}
    
