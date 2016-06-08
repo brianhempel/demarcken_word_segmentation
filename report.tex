@@ -6,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\graphicspath{../figure}
 
 \pagestyle{empty}	% No page number in the footer.
 \begin{document}
@@ -54,8 +55,16 @@
   \subsection*{Evaluation Criteria}
 
 	How de Marcken measures precision/recall. Why it's silly.
+    
+    Since the lexicon is represented as a hierarchy using brackets, to judge the performance, he used these hierarchies to compare with true segmentation. The recall rate is the proportion of the subsequences bracketed in the true segmentation that are also bracketed at some level of the algorithms hierarchical representation of the input.The crossing-brackets rate(similar as precision rate) is the proportion of the subsequences bracketed in the true segmentation that are crossed by some bracketed subsequence in the algorithms hierarchical representation. 
+    
+    He claimed a combination of high recall rate and low crossingbrackets rate is the ideal situation. 
 
-	Different measures of precision recall we tested
+	The problem here is even to use hierarchy, we don't know which hierarchy is correct. What he did now is to consider all hierarchies, that's not accurate. Ideally, we need consider the top hierarchy, and compare it with true segmentation.  
+
+    We do two things, fisrt we measure precision/recall rate both on word-based segmentation and bracket-based segmentation. Secondly, we focus on the top hierarchy, compare with the true segmentation to make sure whether the segmented word is too short or too long. For example, for each found word with both right and left sides on correct brackets, we count how many of these words should have zero brackets in the middle(the word is exactly correct), how many of those should have one,two, more than two brackets(the word is too long). We also did the counting for found word with only left or right side on correct brackets, as well as neither sides on correct brackets.
+
+    All we did can make the evaluation more concrete and accurate. 
 
   \subsection*{Experiments}
   
@@ -79,7 +88,11 @@
 
   what do we consider a word
   graphs/tables
-  
+ 
+  \begin{figure}[h]
+  \includegraphics{../figure/lexicon_size.pdf}
+  \end{figure}
+
   \section*{Discussion}
 
   what do the results mean
