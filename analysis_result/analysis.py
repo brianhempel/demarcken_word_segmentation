@@ -89,49 +89,9 @@ def split_based_analysis(str1,str2):
 
 
 def miss_how_many_bracket(split_from,split_to,split_origin):
-    flag = False
-    tmp = 0
-    for entry in split_origin:
-        if entry == split_from:
-            flag = True
-        if entry[0] == split_to[0]:
-            break 
-        if(flag and entry != split_to and entry != split_from):
-            tmp += 1
-    return tmp 
+    origin_split_points = map(lambda pair: pair[1], split_origin)
+    return sum([1 for split_point in origin_split_points if split_point > split_from[1] and split_point < split_to[1]])
 
-def miss_how_many_bracket_left_to_right(split_from,split_to,split_origin):
-    tmp = 0
-    for i in range(len(split_origin)):
-      if split_origin[i] == split_from:
-        while(split_origin[i][0] < split_to[0]):
-            i += 1
-            tmp += 1
-        if split_origin[i][0] > split_to[0]:
-            break 
-    return tmp    
-
-def miss_how_many_bracket_right_to_left(split_from,split_to,split_origin):
-    tmp = 0
-    for i in range(len(split_origin)):
-        if split_origin[i] == split_to:
-            while(split_origin[i][0] > split_from[0]):
-                i -= 1
-                tmp += 1
-            if split_origin[i][0] < split_from[0]:
-                break 
-    return tmp     
-
-def miss_how_many_bracket_wrong_word(split_from,split_to,split_origin):
-    begin = 0
-    end = 0
-    for i in range(len(split_origin)):
-        if i != len(split_origin)-1:
-            if split_origin[i][0] < split_from[0] and split_origin[i+1][0] > split_from[0]:
-                begin = i
-            if split_origin[i][0] < split_to[0] and split_origin[i+1][0] < split_to[0]:
-                end = i
-    return (end-begin)
 
 def bracket_miss_in_middle(split_origin,split_segment):
     correct_both_side = 0
@@ -177,7 +137,7 @@ def bracket_miss_in_middle(split_origin,split_segment):
 
             if split_from in split_origin and split_to not in split_origin: # left side is corret
                 correct_left_side += 1
-                miss_bracket = miss_how_many_bracket_left_to_right(split_from,split_to,split_origin)
+                miss_bracket = miss_how_many_bracket(split_from,split_to,split_origin)
                 if miss_bracket == 0:
                     correct_left_side_zero_miss += 1
                 elif miss_bracket == 1:
@@ -187,9 +147,9 @@ def bracket_miss_in_middle(split_origin,split_segment):
                 else:
                     correct_left_side_lots_miss += 1
 
-            if split_from not in split_origin and split_to in split_origin: # right side is corret 
-                correct_right_side += 1 
-                miss_bracket = miss_how_many_bracket_right_to_left(split_from,split_to,split_origin)
+            if split_from not in split_origin and split_to in split_origin: # right side is corret
+                correct_right_side += 1
+                miss_bracket = miss_how_many_bracket(split_from,split_to,split_origin)
                 if miss_bracket == 0:
                     correct_right_side_zero_miss += 1
                 elif miss_bracket == 1:
@@ -201,7 +161,7 @@ def bracket_miss_in_middle(split_origin,split_segment):
 
             if split_from not in split_origin and split_to not in split_origin: # neither side is correct
                 correct_neither_side += 1
-                miss_bracket = miss_how_many_bracket_wrong_word(split_from,split_to,split_origin)
+                miss_bracket = miss_how_many_bracket(split_from,split_to,split_origin)
                 if miss_bracket == 0:
                     correct_neither_side_zero_miss +=1
                 elif miss_bracket == 1:
