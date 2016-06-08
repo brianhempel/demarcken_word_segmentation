@@ -163,7 +163,7 @@ def bracket_miss_in_middle(split_origin,split_segment):
         if i != len(split_segment)-1:
             split_from = split_segment[i]
             split_to = split_segment[i+1]
-            if split_from in split_origin and split_to in split_origin: #right and left side are both correct 
+            if split_from in split_origin and split_to in split_origin: #right and left side are both correct
                 correct_both_side += 1
                 miss_bracket = miss_how_many_bracket(split_from,split_to,split_origin)
                 if miss_bracket == 0:
@@ -175,7 +175,7 @@ def bracket_miss_in_middle(split_origin,split_segment):
                 else:
                     correct_both_side_lots_miss += 1
 
-            if split_from in split_origin and split_to not in split_origin: # left side is corret 
+            if split_from in split_origin and split_to not in split_origin: # left side is corret
                 correct_left_side += 1
                 miss_bracket = miss_how_many_bracket_left_to_right(split_from,split_to,split_origin)
                 if miss_bracket == 0:
@@ -197,13 +197,13 @@ def bracket_miss_in_middle(split_origin,split_segment):
                 elif miss_bracket == 2:
                     correct_right_side_two_miss += 1
                 else:
-                    correct_right_side_lots_miss += 1 
+                    correct_right_side_lots_miss += 1
 
-            if split_from not in split_origin and split_to not in split_origin: # neither side is correct 
+            if split_from not in split_origin and split_to not in split_origin: # neither side is correct
                 correct_neither_side += 1
                 miss_bracket = miss_how_many_bracket_wrong_word(split_from,split_to,split_origin)
                 if miss_bracket == 0:
-                    correct_neither_side_zero_miss +=1 
+                    correct_neither_side_zero_miss +=1
                 elif miss_bracket == 1:
                     correct_neither_side_one_miss += 1
                 elif miss_bracket == 2:
@@ -295,7 +295,7 @@ if __name__ == '__main__':
     print "correct_both_side_one_miss %d"%(correct_both_side_one_miss)
     print "correct_both_side_two_miss %d"%(correct_both_side_two_miss)
     print "correct_both_side_lots_miss>=3 %d"%(correct_both_side_lots_miss)
-    
+
     print "correct_left_side %d"%(correct_left_side)
     print "correct_left_side_zero_miss %d"%(correct_left_side_zero_miss)
     print "correct_left_side_one_miss %d"%(correct_left_side_one_miss)
