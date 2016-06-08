@@ -1,0 +1,29 @@
+found_lexicon_word_count 25861
+true_lexicon_word_count 44195
+found_lexicon_precision 0.5241483315
+found_lexicon_recall 0.3067089037
+word-based precision 0.5972949037
+word_based recall 0.5065732337
+split-based precision 0.8760012362
+split_based recall 0.7429475393
+total_split_in_origin 1022480
+correct_both_side 703965
+correct_both_side_zero_miss 517961
+correct_both_side_one_miss 150033
+correct_both_side_two_miss 30447
+correct_both_side_lots_miss>=3 5524
+correct_left_side 70026
+correct_left_side_zero_miss 62605
+correct_left_side_one_miss 6511
+correct_left_side_two_miss 784
+correct_left_side_lots_miss>=3 126
+correct_right_side 70026
+correct_right_side_zero_miss 62806
+correct_right_side_one_miss 5458
+correct_right_side_two_miss 1610
+correct_right_side_lots_miss>=3 152
+correct_neither_side 23161
+correct_neither_side_zero_miss 21813
+correct_neither_side_one_miss 1218
+correct_neither_side_two_miss 119
+correct_neither_side_lots_miss>=3 11

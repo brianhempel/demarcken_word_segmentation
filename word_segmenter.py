@@ -322,7 +322,7 @@ for iteration_number in range(1,16):
 
     candidate_pairs = []
     for pair, pairs in itertools.groupby(sorted(Viterbi_pair_array)):
-        if len(list(pairs)) >= 2:
+        if len(list(pairs)) >= 4:
             candidate_pairs.append(pair)
 
     pair_soft_counts = {}
