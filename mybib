@@ -1,0 +1,26 @@
+@article{de1996unsupervised,
+    title={Unsupervised language acquisition},
+    author={De Marcken, Carl},
+    journal={arXiv preprint cmp-lg/9611002},
+    year={1996}
+}
+
+@inproceedings{de1996linguistic2,
+    title={Linguistic structure as composition and perturbation},
+    author={De Marcken, Carl},
+    booktitle={Proceedings of the 34th annual meeting on Association for Computational Linguistics},
+    pages={335--341},
+    year={1996},
+    organization={Association for Computational Linguistics}
+}
+
+@article{rissanen1978modeling,
+    title={Modeling by shortest data description},
+    author={Rissanen, Jorma},
+    journal={Automatica},
+    volume={14},
+    number={5},
+    pages={465--471},
+    year={1978},
+    publisher={Elsevier}
+}
