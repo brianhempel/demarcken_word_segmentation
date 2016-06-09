@@ -18,6 +18,8 @@ $ time pypy sentences.txt outbasename [min_occurrences_before_considering]
 - `outbasename_discovered_lexicon.txt` A frequency-ordered list of all words found. (Flat representation.)
 - `outbasename_true_lexicon.txt` A frequency-ordered list of all the words in the input.
 
+`min_occurrences_before_considering` is the minimum number of times a word pair must appear before it becomes a candidate for addition to the lexicon. The default value is `2`. (This argument is not available in the experiments below.)
+
 Example command:
 
 ```
