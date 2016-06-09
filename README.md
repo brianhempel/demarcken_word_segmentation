@@ -26,11 +26,25 @@ $ time pypy brown_nolines.txt baseline
 
 A full run on the Brown Corpus takes ~5 hours.
 
-Other experimental algorithm variations are on [different branches](https://github.com/brianhempel/demarcken_word_segmentation/branches). Any usage variations should be apparent by looking at glancing at the last commit in each branch.
+## Experimental Variations
+
+Other experimental algorithm variations are on [different branches](https://github.com/brianhempel/demarcken_word_segmentation/branches).
+
+```
+$ git checkout origin/branch_name
+```
+
+Command usage differences are explained below.
+
+- [word_cost_experiment](https://github.com/brianhempel/demarcken_word_segmentation/tree/word_cost_experiment). Final argument to command should a number for the extra cost per lexicon entry (in bits).
+- [flat_word_reps_experiment](https://github.com/brianhempel/demarcken_word_segmentation/tree/flat_word_reps_experiment). No extra arguments.
+- [flat_word_reps_separate_probabilities_experiment](https://github.com/brianhempel/demarcken_word_segmentation/tree/flat_word_reps_separate_probabilities_experiment). No extra arguments.
+- [flat_words_reps_o_1_lexicon_model_experiment](https://github.com/brianhempel/demarcken_word_segmentation/tree/flat_words_reps_o_1_lexicon_model_experiment). No extra arguments.
+
 
 ## analysis.py
 
-To calculate precision/recall by various metrics, use `analysis_result/analysis.py` script on the files produced by the segmentor.
+To calculate precision/recall by various metrics, use the `analysis_result/analysis.py` script on the files produced by the segmentor.
 
 ```
 $ pypy analysis_result/analysis.py true_segmentation found_segmentation true_lexicon found_lexicon
