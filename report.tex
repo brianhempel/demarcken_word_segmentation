@@ -121,11 +121,15 @@
 	How do these compare to de Marcken's 90.5\% recall?
   
   Precision/recall of set of corpus word break locations
+  
+  In our experiment, precision of set of corpus word break location is 87.6\%, but the recall is 74.2\%, which is lower than De Marcken's result. Because when calculate recall, we only focus on the top hierachy instead of the whole hierachies, and single character doesn't occur too much. All of these make all recall lower. 
 
   Precision/recall of found word locations in corpus (more brutal because you have to get the break on both sides correct and not have a break in the middle)
-  
-  Precision/recall of set of words in lexicon (Note that true lexicon has only 26775 words that occur more than once in the corpus; multiply recall by 44195/26775 to consider only these.)
+  The precision of found word location is 59.7\%, while the recall is 54.7\%. As we can see from error kinds section, lots of our errors come from our tool combines two or thress or more words as a segmented one, hence we will miss more found word locations, as a result, the recall is lower than De Marcken's. 
 
+  Precision/recall of set of words in lexicon (Note that true lexicon has only 26775 words that occur more than once in the corpus; multiply recall by 44195/26775 to consider only these.)
+  
+  The precision here is 52\%, with 30.8\% recall. Because lots of word occurs only once in Brown Corpus, however, our tool only considers the word which occurs more than once. There is no doubt we would miss more words, having a lower recall. 
   \subsection{Experiments}
 
   \includegraphics{./figure/finding_corpus_split_location.pdf}
