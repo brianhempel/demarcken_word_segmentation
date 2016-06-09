@@ -182,12 +182,25 @@
 
   \section{Ideas for Improvement}
 
-  ideas for improvement
+  Using a separate probability model to represent the words in the lexicon produced improved performance. In English, only a few words are composed of other words, so using a different representation for the lexicon and the corpus makes sense.
+  
+  Perhaps this idea can be extended further with explicit negative feedback: what if we partitioned the lexicon entries into two sets: ``word parts'' and ``full words''. Additionally, we give each lexicon entry two probabilities: a probability for its occurrence in the lexicon, and a probability for its occurrence in the corpus.  After calculating the soft counts for a word, we decide whether it is a ``word part'' or a ``full word''. If we classify it as a ``word part'', we artificially decrease its soft count in the corpus, lowering its corpus probability. Similarly, if we classify it as a ``full word'', we artificially decrease its soft count in the lexicon, lowering its lexicon probability. In this way, words and words parts repel each other. 
+
+  It would be interesting to see how this variation performed.
+
+	To automatically learn some word structure at well, each word's lexicon probability could be split into three probabilities: the probability this word occurs as a prefix, the probability this word occurs in the middle of a word, and the probability this word occurs as a suffix. This would encourage words to look like each other structurally and discourage fusing two full words. As above, a similar repelling scheme could be devised to encourage word parts to act as either a prefix, internal fragment, or suffix.
+
+	A final avenue of investigation is to see how the algorithm performs given less information about sentence breaks. Since words cannot cross sentence boundaries, the 14,000 sentences in the Brown Corpus may be providing a significant amount of information about true breaks to the algorithm. It would be interesting to see how much performance drops if, say, each 100 consecutive sentences were combined together before learning.
 
   \section{Conclusion}
 
-  We reimplemented De Marcken's PhD theis, and try to use different evaluation criterion to verify our implementation. His work is really useful and interesting to simulate child's learning process of natural language. And the approximation he used here is acceptable according to the experiment result. However, we think his prcision/recall calculation is not accurate. Hence we provide different one, and conduct experiments, comparing with De Marcken's. The results above show precision/recall of set of corpus found word is a best evaluation criteria under this condition, which make a good tradeoff. On the other hand, even we do lots of internal optimization, a full run still takes more than 5 hours. Speed-up optimization is still desired and needed. 
+  A child learns natural language without any prior information. We reimplemented the MDL-based unsupervised word segmentation algorithm of Carl de Marcken's PhD thesis, and tried different evaluation criterion to assess the algorithm.  The approximation he used produces acceptable results. However, we think his precision/recall calculation is not very meaningful. Hence, we propose three different metrics and comment on their findings compared to de Marcken's metrics. We argue the precision of the found words in the corpus is the best evaluation criteria because it obviates the normal precision/recall tradeoff.
+  
+  We also testing variations of his algorithm. Adding a separate probability model for words in the lexicon produced superior but not spectacular results.
+  
+  Considering the tool we produced, even though we performed lots of internal optimizations, a full run still takes around 5 hours. Optimization is still desired and needed. 
 
+	Although we managed to marginally improve segmentation performance, the corpus found word precision is below 65\%. There still exists room for exciting improvements.
 
 
 \end{document}
