@@ -134,19 +134,47 @@
  
  	Curiously, requiring a word to occur 5 times before it is considered for addition has very little effect on precision recall (87.1\%/74.9\% precision/recall vs. baseline 87.6\%/74.2\%).
 
-	When lexicon words are represented only by single characters, performance is quite poor. The probability of single characters is inflated when parsing the corpus, so in the corpus many parts of sentences are parsed as strings of single-letter words. This creates a lot of word breaks, which raises recall above baseline, but it also creates a lot of word breaks inside true words, lowering precision dramatically (67.5\%/79.0\% precision/recall vs. baseline 87.6\%/74.2\%).
+	When lexicon words are represented only by single characters (``Flat Words''), performance is quite poor. The probability of single characters is inflated when parsing the corpus, so in the corpus many parts of sentences are parsed as strings of single-letter words. This creates a lot of word breaks, which raises recall above baseline, but it also creates a lot of word breaks inside true words, lowering precision dramatically (67.5\%/79.0\% precision/recall vs. baseline 87.6\%/74.2\%).
 
-asdf
+	Simply using a separate character probability table for the lexicon (``Flat Words Separate Lexicon Probabilities'') raises the recall moderately with no effect on precision (87.7\%/77.9\% precision/recall vs. baseline 87.6\%/74.2\%). As seen on the graph, this model performs notably better than extra cost per entry model.
 
-  \includegraphics{./figure/finding_corpus_split_location.pdf}
+	The O(1) probability model for the lexicon also performs better than baseline (88.4\%/77.0\% precision/recall vs. baseline 87.6\%/74.2\%) but on this metric it's a toss-up as to whether the O(1) model performs better than the O(0) model above.
 
-asdf
+  \includegraphics[scale=0.9]{./figure/finding_corpus_split_location.pdf}
 
-  \includegraphics{./figure/finding_corpus_word.pdf}
+  \subsection{Effect on Finding Words in Corpus}
 
-asdf
+	As with the prior metric, requiring a word pair to occur more often before its addition to the lexicon has little effect compared to baseline.
 
-  \includegraphics{./figure/finding_lexiocn_words.pdf}
+	Above we noted that many of our found words are actual double words fused together. Consequently, raising the cost of a lexicon entry splits up these words, leading to an increase in recall with negligible loss in precision. Not until high lexicon entry cost forces words to split into word parts does precision suffer.
+
+	Since so many of the words found by the naive ``Flat Words'' model are single letters, its precision and recall is poor.
+
+	On this metric, both the O(0) (62.3\%/55.4\% precision/recall) and O(1) (62.8\%/54.6\%) lexicon models perform better than baseline (59.7\%/50.5\%), but one is not necessarily better than the other.
+
+  \includegraphics[scale=0.9]{./figure/finding_corpus_word.pdf}
+
+	As emphasized above by the precision/recall line for the ``Varying Entry Cost'' experiment, this metric behaves different from standard precision/recall metrics. Usually, high precision requires low recall, and vis versa. However, to get the word correct in every location---that is, 100\% precision---also means that every correct word location is found---100\% recall. For this reason we suggest that, for the word segmentation task, simply the \textit{precision} of found word locations is a sufficient metric by itself, avoiding the subjective tradeoff inherent in precision/recall judgements.
+	
+	By this metric, the O(1) model performs the best, with 62.8\% of the words it finds being correct.
+
+  \subsection{Effect on Finding Lexicon}
+
+	The precision/recall model behavior for words found in the lexicon is flipped compared to the the corpus word break metric. Fewer words in the dictionary created higher word break recall, here fewer words means lower lexicon word recall.
+
+	As before, requiring a word pair to occur more often before its addition to the lexicon has only a little effect compared to baseline.
+
+	Increasing the cost of lexicon entries is quite effective at increasing precision over baseline (70.4\% vs 52.0\%), though it does so by cutting recall in half.
+
+	The naive ``Flat Words'' model performs poorly. Since it represents so many words in the corpus by spelling them out letter by letter, it doesn't form bigger words.
+
+	Interestingly, the O(0) model finds fewer true words than baseline (29.5\% vs 30.8\% recall). It does, however, achieve a significant increase in precision (65.2\% vs 52.0\%).
+
+	The O(1) model performs unequivocally better than baseline, with increased precision and recall (63.4\%/32.2\% vs 52.0\%/30.8\%), but its performance relative to the O(0) model cannot be clearly established.
+
+  \includegraphics[scale=0.9]{./figure/finding_lexiocn_words.pdf}
+
+	\pagebreak
 
 	For curiosity's sake, the final number of entries in the lexicon for each experiment is plotted below. There are few surprises here.
 
