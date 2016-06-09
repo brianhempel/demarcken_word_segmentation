@@ -7,6 +7,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{cite}
 
 \pagestyle{empty}	% No page number in the footer.
 \begin{document}
@@ -20,7 +21,7 @@
 
   \section{Introduction}
 
-  Carl de Marcken, in his PhD thesis ``Unsupervised Language Acquisition'', attempted to learn words given a large corpus of sentences devoid of all spaces and punctuation, similar to how children learn words from no prior information. In his thesis, de Markcen models learning by searching for a lexicon that minimizes the combined description length of the input and the lexicon together. Both words in the lexicon and sentences are represented by composing smaller words. His method iteratively adds and deletes new lexicon entries based on the goal. The hope is that patterns in the final lexicon reflect the underlying mechanisms and parameters of the language that generated the input.
+  Carl de Marcken, in his PhD thesis ``Unsupervised Language Acquisition'', \cite{de1996unsupervised} attempted to learn words given a large corpus of sentences devoid of all spaces and punctuation, similar to how children learn words from no prior information. In his thesis, de Markcen models learning by searching for a lexicon that minimizes the combined description length of the input and the lexicon together. Both words in the lexicon and sentences are represented by composing smaller words. His method iteratively adds and deletes new lexicon entries based on the goal. The hope is that patterns in the final lexicon reflect the underlying mechanisms and parameters of the language that generated the input.
   
   \section{What We Did}
 
@@ -210,8 +211,9 @@
 
   Although we managed to marginally increase segmentation performance, the found word locations precision is still below 65\%. There exists room for exciting improvements.
 
-\bibliography{mybib}{}
 \bibliographystyle{plain}
+\bibliography{mybib}
+
 
 	\pagebreak
 	\section*{Appendix: Demo Sentence}

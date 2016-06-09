@@ -1,6 +1,8 @@
-all: report.pdf
+all: report
 
-report.pdf: report.tex
-	pdflatex report.tex
-	rm report.log
-	rm report.aux
+report:
+	pdflatex report
+	bibtex report
+	pdflatex report
+	bibtex report
+	pdflatex report
