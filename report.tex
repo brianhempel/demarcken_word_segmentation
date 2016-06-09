@@ -117,31 +117,47 @@
   \includegraphics[scale=0.6]{./figure/error_nature_classfier.pdf}
 
   \subsection{Different Measures of Precision/Recall}
-
-	How do these compare to de Marcken's 90.5\% recall?
   
-  Precision/recall of set of corpus word break locations
-  
-  In our experiment, precision of set of corpus word break location is 87.6\%, but the recall is 74.2\%, which is lower than De Marcken's result. Because when calculate recall, we only focus on the top hierachy instead of the whole hierachies, and single character doesn't occur too much. All of these make all recall lower. 
+  In our experiment, precision of set of corpus word break location is 87.6\%, but the recall is 74.2\%. Which is lower than De Marcken's result because when calculating recall we only focus on the top level of the hierarchy instead of the whole hierarchy. This makes recall lower. 
 
-  Precision/recall of found word locations in corpus (more brutal because you have to get the break on both sides correct and not have a break in the middle)
-  The precision of found word location is 59.7\%, while the recall is 54.7\%. As we can see from error kinds section, lots of our errors come from our tool combines two or thress or more words as a segmented one, hence we will miss more found word locations, as a result, the recall is lower than De Marcken's. 
-
-  Precision/recall of set of words in lexicon (Note that true lexicon has only 26775 words that occur more than once in the corpus; multiply recall by 44195/26775 to consider only these.)
+  The precision of found word location is 59.7\%, while the recall is 54.7\%. As we can see from error kinds section, lots of our errors come from our tool combining two or more words into a single word, hence we will miss more found word locations. As a result, the recall is lower than De Marcken's. 
   
-  The precision here is 52\%, with 30.8\% recall. Because lots of word occurs only once in Brown Corpus, however, our tool only considers the word which occurs more than once. There is no doubt we would miss more words, having a lower recall. 
+  For the set of words in the found lexicon, the precision is 52\%, with 30.8\% recall. The low recall is because lots of words occur only once in the Brown Corpus but our tool only considers creating a word when a pair occurs more than once. Thus we miss more words. Of the 44,195 unique words in the Brown Corpus, 26,775 of them occur at least twice. If we only consider these words that occur at least twice, our recall is 50.8\%, which is still not great.
+
   \subsection{Experiments}
+  
+  All of the precision/recall graphs below have been focused on the area of interest---none of them start at 0.
+  
+  \subsection{Effect on Finding Word Breaks in Corpus}
+  
+  Both methods of decreasing lexicon size---requiring words to occur more often before being considered for addition, and imposing extra description length cost for each lexicon entry---increase split position recall in the corpus. Less words means we must use smaller words which means more word breaks.
+ 
+ 	Curiously, requiring a word to occur 5 times before it is considered for addition has very little effect on precision recall (87.1\%/74.9\% precision/recall vs. baseline 87.6\%/74.2\%).
+
+	When lexicon words are represented only by single characters, performance is quite poor. The probability of single characters is inflated when parsing the corpus, so in the corpus many parts of sentences are parsed as strings of single-letter words. This creates a lot of word breaks, which raises recall above baseline, but it also creates a lot of word breaks inside true words, lowering precision dramatically (67.5\%/79.0\% precision/recall vs. baseline 87.6\%/74.2\%).
+
+asdf
 
   \includegraphics{./figure/finding_corpus_split_location.pdf}
 
+asdf
+
   \includegraphics{./figure/finding_corpus_word.pdf}
 
+asdf
+
   \includegraphics{./figure/finding_lexiocn_words.pdf}
+
+	For curiosity's sake, the final number of entries in the lexicon for each experiment is plotted below. There are few surprises here.
 
   \includegraphics{./figure/lexicon_size.pdf}
 
   \section{Ideas for Improvement}
 
   ideas for improvement
+
+  \section{Conclusion}
+
+
 
 \end{document}
