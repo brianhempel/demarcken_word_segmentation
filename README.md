@@ -5,7 +5,7 @@ An implementation of Carl de Marcken's PhD thesis, [Unsupervised Language Acquis
 Usage:
 
 ```
-$ time pypy sentences.txt outbasename [min_occurrences_before_considering]
+$ time pypy word_segmenter.py sentences.txt outbasename [min_occurrences_before_considering]
 ```
 
 `sentences.txt` is a corpus with one sentence per line. Punctuation etc will be removed by the script before learning.
@@ -23,7 +23,7 @@ $ time pypy sentences.txt outbasename [min_occurrences_before_considering]
 Example command:
 
 ```
-$ time pypy brown_nolines.txt baseline
+$ time pypy word_segmenter.py brown_nolines.txt baseline
 ```
 
 A full run on the Brown Corpus takes ~5 hours.
