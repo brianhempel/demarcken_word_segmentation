@@ -160,7 +160,7 @@
 
 	Above we noted that many of our found words are actual double words fused together. Consequently, raising the cost of a lexicon entry splits up these words, leading to an increase in recall with negligible loss in precision. Not until high lexicon entry cost forces words to split into word parts does precision suffer.
 
-	Since so many of the word location found by the naive ``Flat Words'' model are a-single-letter long, its precision and recall is poor.
+	Since so many of the word location found by the naive ``Flat Words'' model are a single letter long, its precision and recall is poor.
 
 	On this metric, both the O(0) (62.3\%/55.4\% precision/recall) and O(1) (62.8\%/54.6\%) lexicon models perform better than baseline (59.7\%/50.5\%), but one is not necessarily better than the other.
 
@@ -194,7 +194,7 @@
 
   Using a separate probability model to represent the words in the lexicon produced improved performance. In English, only a few words are composed of other words, so using a different representation for the lexicon and the corpus makes sense.
   
-  Perhaps this idea can be extended further with explicit negative feedback. Inside this proposal: we partitioned the lexicon entries into two sets: ``word parts'' and ``full words''. Additionally, we give each lexicon entry two probabilities: a probability for the word's occurrence in the lexicon, and a probability for its occurrence in the corpus.  After calculating the soft counts for a word, we decide whether it is a ``word part'' or a ``full word''. If we classify it as a ``word part'', we artificially decrease its soft count in the corpus, lowering its corpus probability. Similarly, if we classify it as a ``full word'', we artificially decrease its soft count in the lexicon, lowering its lexicon probability. In this way, ``full words'' and ``words parts'' repel each other. It would be interesting to see how this variation performed.
+  Perhaps this idea can be extended further with explicit negative feedback. Consider this proposal: we partition the lexicon entries into two sets: ``word parts'' and ``full words''. Additionally, we give each lexicon entry two probabilities: a probability for the word's occurrence in the lexicon, and a probability for its occurrence in the corpus.  After calculating the lexicon and corpus soft counts for a word, we decide whether the word is a ``word part'' or a ``full word''. If we classify it as a ``word part'', we artificially decrease its soft count in the corpus, lowering its corpus probability. Similarly, if we classify it as a ``full word'', we artificially decrease its soft count in the lexicon, lowering its lexicon probability. In this way, ``full words'' and ``words parts'' repel each other. It would be interesting to see how this variation performed.
 
 	To automatically learn some word structure at well, this model could be extended. Each word's lexicon probability could be split into three probabilities: the probability this word occurs as a prefix, the probability this word occurs in the middle of a word, and the probability this word occurs as a suffix. This would encourage words to look like each other structurally and discourage fusing two full words (as prefixes and suffixes would be unlikely in the middle of a word). As above, a similar repelling scheme could be devised to encourage word parts to act exclusively as a prefix, internal fragment, or suffix.
 
@@ -202,15 +202,87 @@
 
   \section{Conclusion}
 
-  A child learns natural language without any prior information. We reimplemented the MDL-based unsupervised word segmentation algorithm of Carl de Marcken's PhD thesis and tried different evaluation criterion to assess the results.  The approximation he used produces acceptable results. However, we believe his recall/crossing-brackets calculation is not very meaningful. Hence, we propose three different metrics and comment on their findings compared to de Marcken's metrics. We argue the precision of the found words in the corpus is the best evaluation criteria because it obviates the normal precision/recall tradeoff.
+  We reimplemented the MDL-based unsupervised word segmentation algorithm of Carl de Marcken's PhD thesis and tried different evaluation criterion to assess the results.  The approximation he used produced acceptable results. However, we believe his recall/crossing-brackets calculation is not very meaningful. Hence, we propose three different metrics and comment on their findings compared to de Marcken's metrics. We argue the precision of the found words in the corpus is the best evaluation criteria because it obviates the normal precision/recall tradeoff.
   
   We also testing variations of his algorithm. Adding a separate probability model for words in the lexicon produced superior but not spectacular results.
   
   Considering the tool we produced, even though we performed lots of internal optimizations, a full run still takes around 5 hours. Optimization is still desired and needed. 
 
-  Although we managed to marginally measure segmentation performance, the found word locations precision is below 65\%. There still exists room for exciting improvements.
+  Although we managed to marginally increase segmentation performance, the found word locations precision is still below 65\%. There exists room for exciting improvements.
 
 \bibliography{mybib}{}
 \bibliographystyle{plain}
+
+	\pagebreak
+	\section*{Appendix: Demo Sentence}
+
+	Correct words are \textbf{bolded}, differences from baseline are \underline{underlined}.
+
+	\vspace{2em}
+
+	 \textsl{True segmentation}
+	\begin{quote}\textbf{this year coach royal told me if id work on my place kicking he thought he could use me said moritz so i started practicing on it in spring training}\end{quote}
+	\vspace{1em}
+	
+\textsl{Baseline algorithm}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy placekicking hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
+\textsl{Flat word representations}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \underline{ifid} \textbf{work} onmy \textbf{\underline{place}} \textbf{\underline{kicking}} hethought hecould \textbf{use} \underline{m} \underline{e} \textbf{said} \textbf{moritz} \underline{s} \underline{o} \textbf{\underline{i}} \textbf{\underline{started}} \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} \textbf{\underline{spring}} \textbf{\underline{training}}\end{quote}
+	\vspace{1em}
+
+\textsl{Flat words separate lexicon probabilities}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \underline{ifid} \textbf{work} onmy \textbf{\underline{place}} \textbf{\underline{kicking}} hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} \textbf{\underline{spring}} \textbf{\underline{training}}\end{quote}
+	\vspace{1em}
+
+\textsl{Flat words O(1) lexicon probabilites}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \underline{ifid} \textbf{work} onmy \textbf{\underline{place}} \textbf{\underline{kicking}} hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} \textbf{\underline{spring}} \textbf{\underline{training}}\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost minus 8 bits}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \underline{ifid} \textbf{work} onmy placekicking hethought \underline{hecoulduse} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \underline{onit} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost plus 1 bit}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \underline{workon} \textbf{\underline{my}} placekicking hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost plus 2 bits}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy placekicking hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost plus 4 bits}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy placekicking hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost plus 8 bits}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy \textbf{\underline{place}} \textbf{\underline{kicking}} hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} \textbf{\underline{i}} \textbf{\underline{started}} \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} \textbf{\underline{spring}} \textbf{\underline{training}}\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost plus 16 bits}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy \textbf{\underline{place}} \textbf{\underline{kicking}} hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} \textbf{\underline{i}} \textbf{\underline{started}} \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} \textbf{\underline{spring}} \textbf{\underline{training}}\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost plus 32 bits}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy \textbf{\underline{place}} \textbf{\underline{kicking}} hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} \textbf{\underline{i}} \textbf{\underline{started}} \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} \textbf{\underline{spring}} \textbf{\underline{training}}\end{quote}
+	\vspace{1em}
+
+\textsl{Grammar entry cost plus 64 bits}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \underline{ifi} \underline{d} \textbf{work} \textbf{on} \textbf{\underline{my}} \textbf{\underline{place}} \underline{kick} \underline{ing} hethought hecould \textbf{use} \textbf{me} \textbf{said} \underline{mor} \underline{itz} \textbf{so} \textbf{\underline{i}} \textbf{\underline{started}} \underline{practic} \underline{ing} \textbf{on} \textbf{it} \textbf{in} \textbf{\underline{spring}} \textbf{\underline{training}}\end{quote}
+	\vspace{1em}
+
+\textsl{Min 3 occurrences before adding}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \underline{workon} \textbf{\underline{my}} placekicking hethought \underline{hecoulduse} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
+\textsl{Min 4 occurrences before adding}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy placekicking hethought \underline{hecoulduse} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
+\textsl{Min 5 occurrences before adding}
+\begin{quote}thisyear \textbf{coach} \textbf{royal} toldme \textbf{if} \textbf{id} \textbf{work} onmy \textbf{\underline{place}} \textbf{\underline{kicking}} hethought hecould \textbf{use} \textbf{me} \textbf{said} \textbf{moritz} \textbf{so} istarted \textbf{practicing} \textbf{on} \textbf{it} \textbf{in} springtraining\end{quote}
+	\vspace{1em}
+
 \end{document}
 
